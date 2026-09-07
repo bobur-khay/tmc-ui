@@ -21,7 +21,7 @@ export interface MetaResponse {
   page: {
     pageNumber: number;
     pageSize: number;
-    totalElements: number;
+    elements: number;
   };
 }
 
@@ -118,13 +118,13 @@ export async function fetchApiDataInventory(
 
       return {
         data: data,
-        meta: meta ?? { lastUpdated: '', page: { pageNumber: 0, pageSize: 0, totalElements: 0 } },
+        meta: meta ?? { lastUpdated: '', page: { pageNumber: 0, pageSize: 0, elements: 0 } },
       };
     }
 
     return {
       data: [],
-      meta: { lastUpdated: '', page: { pageNumber: 0, pageSize: 0, totalElements: 0 } },
+      meta: { lastUpdated: '', page: { pageNumber: 0, pageSize: 0, elements: 0 } },
     };
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === 'AbortError') {

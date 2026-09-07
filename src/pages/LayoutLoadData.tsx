@@ -55,7 +55,7 @@ const LayoutLoadData = () => {
             );
 
             setInventory(data as Item[]);
-            setTotalItems(meta.page.totalElements);
+            setTotalItems(meta.page.elements);
             return;
           }
           case 'TYPE_TMC-UI-CATALOG':

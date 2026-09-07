@@ -142,7 +142,7 @@ const Layout: React.FC<{
           );
 
           setFilteredItems(data as Item[]);
-          setResultCounts(meta.page.totalElements);
+          setResultCounts(meta.page.elements);
         } catch (err: unknown) {
           if (err instanceof DOMException && err.name === 'AbortError') {
             return;
@@ -228,7 +228,7 @@ const Layout: React.FC<{
           );
 
           setFilteredItems(data as Item[]);
-          setResultCounts(meta.page.totalElements);
+          setResultCounts(meta.page.elements);
         } catch (err: unknown) {
           if (err instanceof DOMException && err.name === 'AbortError') return;
           console.error(err);
@@ -277,7 +277,7 @@ const Layout: React.FC<{
           );
 
           setFilteredItems(data as Item[]);
-          setResultCounts(meta.page.totalElements);
+          setResultCounts(meta.page.elements);
         } catch (err: unknown) {
           if (err instanceof DOMException && err.name === 'AbortError') return;
           console.error(err);
