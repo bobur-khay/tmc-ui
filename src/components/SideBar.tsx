@@ -11,6 +11,7 @@ interface SideBarProps {
   protocolsState: Array<FilterData>;
   onFilterChange: (sectionId: string, optionValue: string, checked: boolean) => void;
   onAddProtocol?: (protocol: FilterData) => void;
+  resetFilters: () => void;
 }
 
 const SideBar: React.FC<SideBarProps> = ({
@@ -20,6 +21,7 @@ const SideBar: React.FC<SideBarProps> = ({
   protocolsState,
   onFilterChange,
   onAddProtocol,
+  resetFilters,
 }) => {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -55,6 +57,12 @@ const SideBar: React.FC<SideBarProps> = ({
     <div className="w-full">
       <div className="flex items-baseline justify-between border-b border-border-subtle pb-5">
         <h1 className="text-3xl font-bold tracking-tight text-text-primary">Filters</h1>
+        <Button
+          text="Reset filters"
+          className="rounded px-2"
+          onClick={resetFilters}
+          variant="default"
+        />
       </div>
 
       <section aria-labelledby="products-heading" className="pb-15 pt-6">

@@ -7,7 +7,6 @@ import Search from '../components/Search';
 import SideBar from '../components/SideBar';
 import Pagination from '../components/Pagination';
 import Loader from '../components/base/Loader';
-import Button from '../components/base/Button';
 import Dropdown from '../components/base/Dropdown';
 import { fetchApiDataInventory } from '../services/apiData';
 import AppError from '../components/AppError';
@@ -308,7 +307,12 @@ const Layout: React.FC<{
   };
 
   if (errorFetchData) {
-    return <AppError titleError={inventoryError ?? 'Error fetching data'} codeError={404} />;
+    return (
+      <AppError
+        titleError={inventoryError ?? undefined}
+        descriptionError="Please try again later"
+      />
+    );
   }
   return (
     <>
@@ -316,10 +320,9 @@ const Layout: React.FC<{
         <main>
           <div
             id="search-bar"
-            className="mb-10 flex flex-col gap-4 px-4 sm:px-6 md:flex-row md:items-center"
+            className="mb-10 flex justify-center gap-4 px-4 sm:px-6 md:flex-row md:items-center"
           >
-            <div className="hidden md:block md:w-1/4 lg:w-1/5" />
-            <div className="w-full md:w-2/4 lg:w-3/5">
+            <div className="w-full md:w-3/4 lg:w-3/5">
               {__DEPLOY_TYPE__ === 'SERVER_AVAILABLE' && (
                 <Search
                   query={query}
@@ -333,12 +336,11 @@ const Layout: React.FC<{
                 />
               )}
             </div>
-            <div className="hidden md:block md:w-1/4 lg:w-1/5" />
           </div>
 
           <div className="max-w-screen-3xl flex flex-col gap-12 px-4 sm:px-6 lg:flex-row lg:px-8">
             {/* Sidebar */}
-            <aside className="w-full rounded-lg p-4 lg:w-1/4" aria-label="Filters">
+            <aside className="w-full rounded-lg lg:w-1/4 lg:max-w-72" aria-label="Filters">
               <SideBar
                 manufacturersState={manufacturersState}
                 authorsState={authorsState}
@@ -348,23 +350,19 @@ const Layout: React.FC<{
                 onAddProtocol={(protocol) => {
                   setProtocolsState((prev) => [...prev, protocol]);
                 }}
+                resetFilters={resetFilters}
               />
             </aside>
 
             {/* Results */}
             <section className="w-3/4 flex-1">
-              <div className="mb-4 flex flex-wrap items-center gap-4 text-text-primary">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-4 text-text-primary">
                 <p className="text-lg">
-                  {resultCounts} result
+                  <span className="text-[var(--color-icon-brand)]">{resultCounts}</span> result
                   {resultCounts !== 1 ? 's' : ''} found in the catalog with {totalElements} TMs in
                   total
                 </p>
-                <Button
-                  text="Reset filters"
-                  onClick={resetFilters}
-                  className="w-64 justify-center rounded border"
-                  variant="default"
-                />
+
                 <label className="flex items-center gap-2 text-sm text-text-primary">
                   TMs per page:
                   <Dropdown
