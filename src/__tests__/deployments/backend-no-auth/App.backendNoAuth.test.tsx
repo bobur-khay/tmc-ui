@@ -101,10 +101,10 @@ describe('Backend No Auth (SERVER_AVAILABLE, SERVER_URL; no token URL)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Filters' })).toBeTruthy();
     expect(await screen.findByRole('link', { name: 'Dashboard' })).toBeTruthy();
-    expect(await screen.findByText('Protocol')).toBeTruthy();
-    expect(await screen.findByText('Manufacturer')).toBeTruthy();
-    expect(await screen.findByText('Author')).toBeTruthy();
-    expect(await screen.findByText('Repository')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Protocol' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Manufacturer' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Author' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Repository' })).toBeTruthy();
 
     expect(screen.queryByText('Enter API credentials')).toBeNull();
     expect(screen.queryByText('Environment not configured')).toBeNull();
@@ -121,10 +121,10 @@ describe('Backend No Auth (SERVER_AVAILABLE, SERVER_URL; no token URL)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Filters' })).toBeTruthy();
     expect(await screen.findByRole('link', { name: 'Dashboard' })).toBeTruthy();
-    expect(await screen.findByText('Protocol')).toBeTruthy();
-    expect(await screen.findByText('Manufacturer')).toBeTruthy();
-    expect(await screen.findByText('Author')).toBeTruthy();
-    expect(await screen.findByText('Repository')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Protocol' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Manufacturer' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Author' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Repository' })).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'ThingasLamp', level: 3 })).toBeTruthy();
     await waitFor(() => {
       expect(document.body.textContent?.replace(/\s+/g, ' ')).toContain('1 result found');
