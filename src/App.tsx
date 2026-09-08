@@ -24,7 +24,7 @@ import { CLIENT_ID_SESSION_KEY, CLIENT_SECRET_SESSION_KEY } from './utils/consta
 const AppShell: React.FC<{ showSettings: boolean }> = ({ showSettings }) => {
   return (
     <>
-      <Navbar showSettings={showSettings} />
+      <Navbar showAuthentication={showSettings} />
       <Outlet />
     </>
   );
@@ -38,7 +38,7 @@ const AppShellError: React.FC<{
 }> = ({ codeError, titleError, descriptionError, showSettings }) => {
   return (
     <>
-      <Navbar showSettings={showSettings} />
+      <Navbar showAuthentication={showSettings} />
       <AppError codeError={codeError} titleError={titleError} descriptionError={descriptionError} />
     </>
   );
