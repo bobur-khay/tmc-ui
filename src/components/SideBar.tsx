@@ -42,7 +42,10 @@ const SideBar: React.FC<SideBarProps> = ({
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
+      setShowScrollTop(
+        (window.innerWidth > 1024 && window.scrollY > 1000) ||
+          (window.innerWidth <= 1024 && window.scrollY > 2000),
+      );
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -105,24 +108,22 @@ const SideBar: React.FC<SideBarProps> = ({
           </form>
 
           {/* Product grid */}
-          <div className="lg:col-span-3">
-            {showScrollTop && (
-              <div className="fixed bottom-8 left-8 z-50 pr-10">
-                <Button
-                  type="button"
-                  onClick={scrollToTop}
-                  aria-label="Scroll to top"
-                  className="whitespace-nowrap border"
-                  variant="default"
-                >
-                  <span className="inline-flex items-center gap-2 p-2">
-                    <ChevronUpIcon className="size-6" aria-hidden="true" />
-                    <span>Go back to top</span>
-                  </span>
-                </Button>
-              </div>
-            )}
-          </div>
+          {showScrollTop && (
+            <div className="fixed bottom-4 right-4 z-50">
+              <Button
+                type="button"
+                onClick={scrollToTop}
+                aria-label="Scroll to top"
+                className="whitespace-nowrap border"
+                variant="default"
+              >
+                <span className="inline-flex items-center gap-2 p-2">
+                  <ChevronUpIcon className="size-6" aria-hidden="true" />
+                  <span>Back to top</span>
+                </span>
+              </Button>
+            </div>
+          )}
         </div>
       </section>
     </div>
