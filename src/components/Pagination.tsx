@@ -145,9 +145,6 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
           </svg>
         </Button>
       </div>
-      <p className="text-xs text-text-secondary">
-        Page {page} of {totalPages}
-      </p>
     </nav>
   );
 };
