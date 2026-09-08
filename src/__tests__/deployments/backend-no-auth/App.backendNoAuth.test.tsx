@@ -148,10 +148,21 @@ describe('Backend No Auth (SERVER_AVAILABLE, SERVER_URL; no token URL)', () => {
     renderApp();
 
     expect(await screen.findByRole('heading', { name: 'ThingasLamp', level: 3 })).toBeTruthy();
+    const callsBeforeDateChanges = mockFetchApiInventory.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: 'Changed Since' }));
-    fireEvent.change(await screen.findByLabelText('Show TMs changed on or after'), {
+    const changedSinceInput = await screen.findByLabelText('Show TMs changed on or after');
+    fireEvent.change(changedSinceInput, {
+      target: { value: '2024-09-08' },
+    });
+    fireEvent.change(changedSinceInput, {
+      target: { value: '2025-09-08' },
+    });
+    fireEvent.change(changedSinceInput, {
       target: { value: '2026-09-08' },
     });
+
+    expect(mockFetchApiInventory).toHaveBeenCalledTimes(callsBeforeDateChanges);
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
 
     await waitFor(() => {
       expect(mockFetchApiInventory).toHaveBeenLastCalledWith(
