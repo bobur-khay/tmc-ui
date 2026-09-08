@@ -36,29 +36,31 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
   return (
     <nav aria-label="Pagination" className={className ?? 'mt-8 flex flex-col items-center gap-4'}>
       <div className="flex gap-2">
-        <Button
-          type="button"
-          onClick={() => goToPage(1)}
-          disabled={page === 1}
-          aria-label="Go to first page"
-          className={paginationButtonClassName}
-          variant="default"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
+        {totalPages > 2 && (
+          <Button
+            type="button"
+            onClick={() => goToPage(1)}
+            disabled={page === 1}
+            aria-label="Go to first page"
+            className={paginationButtonClassName}
+            variant="default"
           >
-            <path d="M10 6L11.4 7.4L6.9 12L11.4 16.6L10 18L4 12L10 6Z" fill="currentColor" />
-            <path
-              d="M16.98 6L18.38 7.4L13.88 12L18.38 16.6L16.98 18L10.98 12L16.98 6Z"
-              fill="currentColor"
-            />
-          </svg>
-        </Button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="M10 6L11.4 7.4L6.9 12L11.4 16.6L10 18L4 12L10 6Z" fill="currentColor" />
+              <path
+                d="M16.98 6L18.38 7.4L13.88 12L18.38 16.6L16.98 18L10.98 12L16.98 6Z"
+                fill="currentColor"
+              />
+            </svg>
+          </Button>
+        )}
         <Button
           type="button"
           onClick={() => goToPage(page - 1)}
@@ -121,29 +123,31 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
             <path d="M11 18L9.6 16.6L14.1 12L9.6 7.4L11 6L17 12L11 18Z" fill="currentColor" />
           </svg>
         </Button>
-        <Button
-          type="button"
-          onClick={() => goToPage(totalPages)}
-          disabled={page === totalPages}
-          aria-label="Go to last page"
-          className={paginationButtonClassName}
-          variant="default"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
+        {totalPages > 2 && (
+          <Button
+            type="button"
+            onClick={() => goToPage(totalPages)}
+            disabled={page === totalPages}
+            aria-label="Go to last page"
+            className={paginationButtonClassName}
+            variant="default"
           >
-            <path d="M14 18L12.6 16.6L17.1 12L12.6 7.4L14 6L20 12L14 18Z" fill="currentColor" />
-            <path
-              d="M7.02 18L5.62 16.6L10.12 12L5.62 7.4L7.02 6L13.02 12L7.02 18Z"
-              fill="currentColor"
-            />
-          </svg>
-        </Button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="M14 18L12.6 16.6L17.1 12L12.6 7.4L14 6L20 12L14 18Z" fill="currentColor" />
+              <path
+                d="M7.02 18L5.62 16.6L10.12 12L5.62 7.4L7.02 6L13.02 12L7.02 18Z"
+                fill="currentColor"
+              />
+            </svg>
+          </Button>
+        )}
       </div>
     </nav>
   );
