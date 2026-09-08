@@ -43,7 +43,7 @@ const Navbar: React.FC<{ showSettings: boolean }> = ({ showSettings }) => {
 
   return (
     <Disclosure as="nav" className="border-b border-surface-panel-hover bg-surface-panel">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-16 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between">
           <div className="flex w-full items-center justify-between gap-6">
             <div className="flex shrink-0 items-center">
