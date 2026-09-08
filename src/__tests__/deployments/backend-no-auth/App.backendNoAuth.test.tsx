@@ -143,11 +143,11 @@ describe('Backend No Auth (SERVER_AVAILABLE, SERVER_URL; no token URL)', () => {
     mockFetchApiInventory
       .mockResolvedValueOnce({
         data: [makeItem('ThingasLamp'), makeItem('ThingasSensor')],
-        meta: { lastUpdated: '', page: { pageNumber: 1, pageSize: 10, totalElements: 25 } },
+        meta: { lastUpdated: '', page: { pageNumber: 1, pageSize: 10, elements: 25 } },
       })
       .mockResolvedValueOnce({
         data: [makeItem('ThingasLamp')],
-        meta: { lastUpdated: '', page: { pageNumber: 1, pageSize: 10, totalElements: 1 } },
+        meta: { lastUpdated: '', page: { pageNumber: 1, pageSize: 10, elements: 1 } },
       });
 
     renderApp();
