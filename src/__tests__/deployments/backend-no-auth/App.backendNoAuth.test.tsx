@@ -139,6 +139,34 @@ describe('Backend No Auth (SERVER_AVAILABLE, SERVER_URL; no token URL)', () => {
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
   });
 
+  test('filters inventory by changed date', async () => {
+    mockFetchApiInventory.mockResolvedValue({
+      data: [makeItem('ThingasLamp')],
+      meta: { lastUpdated: '', page: { pageNumber: 1, pageSize: 10, totalElements: 1 } },
+    });
+
+    renderApp();
+
+    expect(await screen.findByRole('heading', { name: 'ThingasLamp', level: 3 })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Changed Since' }));
+    fireEvent.change(await screen.findByLabelText('Show TMs changed on or after'), {
+      target: { value: '2026-09-08' },
+    });
+
+    await waitFor(() => {
+      expect(mockFetchApiInventory).toHaveBeenLastCalledWith(
+        TEST_API_BASE,
+        expect.objectContaining({
+          authorizationHeader: null,
+          filters: expect.objectContaining({ changedSince: '20260908' }),
+          signal: expect.any(AbortSignal),
+        }),
+        1,
+        10,
+      );
+    });
+  });
+
   test('Resetting filters restores the initial backend page and total count', async () => {
     mockFetchApiInventory
       .mockResolvedValueOnce({
