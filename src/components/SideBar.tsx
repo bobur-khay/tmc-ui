@@ -58,7 +58,7 @@ const SideBar: React.FC<SideBarProps> = ({
 
   return (
     <div className="w-full">
-      <div className="flex items-baseline justify-between border-b border-border-subtle pb-5">
+      <div className="flex items-baseline justify-between pb-4">
         <h1 className="text-3xl font-bold tracking-tight text-text-primary">Filters</h1>
         <Button
           text="Reset filters"
@@ -68,12 +68,12 @@ const SideBar: React.FC<SideBarProps> = ({
         />
       </div>
 
-      <section aria-labelledby="products-heading" className="pb-15 pt-6">
+      <section aria-labelledby="products-heading" className="pb-15">
         <div className="flex flex-col gap-x-8 gap-y-10">
           {/* Filters */}
           <form className="lg:block">
             {filters.map((section) => (
-              <Disclosure key={section.id} as="div" className="border-b border-border-subtle py-6">
+              <Disclosure key={section.id} as="div" className="border-b border-border-subtle py-5">
                 <h3 className="flow-root">
                   <DisclosureButton className="group flex w-full items-center justify-between bg-surface-canvas py-3 text-sm">
                     <span className="font-medium text-text-secondary">{section.name}</span>
@@ -89,7 +89,7 @@ const SideBar: React.FC<SideBarProps> = ({
                     </span>
                   </DisclosureButton>
                 </h3>
-                <DisclosurePanel className="bg-surface-canvas pt-6">
+                <DisclosurePanel className="bg-surface-canvas pt-3">
                   {section.id === 'protocol' && __DEPLOY_TYPE__ !== 'SERVER_AVAILABLE' ? (
                     <p className="mb-4 text-sm text-text-primary">
                       Protocol filtering is only available when connected to a backend server.
