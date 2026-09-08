@@ -80,16 +80,15 @@ const Settings: React.FC<SettingsProps> = ({
         </div>
 
         <CredentialsForm
-          eyebrow="Settings"
+          eyebrow="API Authentication"
           title="Update API credentials"
-          description="Edit the client ID and client secret used for authenticated catalog requests."
+          description="The credentials are used for authenticated catalog requests. Changes are saved to this browser tab and applied immediately after re-authentication."
           clientId={newClientId}
           clientSecret={newClientSecret}
           onClientIdChange={setNewClientId}
           onClientSecretChange={setNewClientSecret}
           onSubmit={handleSave}
           submitText="Save credentials"
-          helperText="Changes are saved to this browser tab and applied immediately after re-authentication."
           errorMessage={saveError}
           isSubmitting={isSaving}
         />

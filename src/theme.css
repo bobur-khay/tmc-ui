@@ -77,7 +77,7 @@ html.dark {
   --color-status-success: #34c759;
   --color-status-success-subtle: #34c7591a;
   --color-status-success-outline: #34c75933;
-  --color-status-error: #ff5c5c;
+  --color-status-error: rgb(168, 60, 60);
   --color-status-error-subtle: #ff5c5c1a;
   --color-status-error-hover: #ff5c5c33;
   --color-status-error-outline: #ff5c5c4d;

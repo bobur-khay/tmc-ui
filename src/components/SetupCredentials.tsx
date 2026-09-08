@@ -19,30 +19,26 @@ const CredentialsPrompt: React.FC<CredentialsPromptProps> = ({
   errorMessage = null,
   isSubmitting = false,
 }: CredentialsPromptProps) => {
-  let description =
-    'Provide the client ID and client secret to start the authenticated catalog session.';
+  const helperText = 'Credentials stay available for this browser tab until it is closed.';
 
   const setupCredentialsMessage =
-    description +
-    (import.meta.env.VITE_SETUP_CREDENTIALS_MESSAGE === ''
-      ? ' If you do not have credentials, contact the administrator.'
-      : import.meta.env.VITE_SETUP_CREDENTIALS_MESSAGE);
+    import.meta.env.VITE_SETUP_CREDENTIALS_MESSAGE ||
+    'The credentials are used for authenticated catalog requests. If you do not have credentials, contact the administrator.';
 
   return (
     <main className="min-h-[calc(100dvh-4rem)] bg-surface-canvas px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex min-h-[calc(100dvh-9rem)] max-w-6xl items-center justify-center">
         <div className="w-full max-w-xl">
           <CredentialsForm
-            eyebrow="Setup API authentication"
+            eyebrow="API authentication"
             title="Enter API credentials"
-            description={setupCredentialsMessage}
+            description={`${setupCredentialsMessage} ${helperText}`}
             clientId={clientId}
             clientSecret={clientSecret}
             onClientIdChange={onClientIdChange}
             onClientSecretChange={onClientSecretChange}
             onSubmit={onSubmit}
             submitText="Continue"
-            helperText="Credentials stay available for this browser tab until it is closed."
             errorMessage={errorMessage}
             autoFocusClientId
             isSubmitting={isSubmitting}
