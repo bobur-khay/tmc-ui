@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
-import { MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { useParams, useLocation } from 'react-router-dom';
+import { ArrowLeftIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import defaultImage from '../assets/default-image.png';
 import ErrorAlert from '../alerts/Error';
 import FieldCard from '../components/base/FieldCard';
@@ -21,6 +21,7 @@ const Details = () => {
   const fetchName = (params['*'] ?? params.name ?? '') as string;
 
   const location = useLocation();
+  const navigate = useNavigate();
   const stateItem: Item =
     location.state &&
     (
@@ -219,6 +220,10 @@ const Details = () => {
 
   const sections = useThingDetailsSections(fullDescription);
 
+  const handleBack = () => {
+    navigate(location.key === 'default' ? '/' : -1);
+  };
+
   if (loading)
     return (
       <div className="flex min-h-dvh items-center justify-center bg-surface-canvas">
@@ -236,7 +241,16 @@ const Details = () => {
 
   return (
     <div className="min-h-dvh bg-surface-canvas">
-      <main className="mx-auto max-w-7xl sm:px-6 sm:pt-16 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 sm:pt-10 lg:px-8">
+        <Button
+          type="button"
+          onClick={handleBack}
+          variant="none"
+          className="mb-6 px-1 text-interactive-primary hover:text-interactive-hover"
+        >
+          <ArrowLeftIcon aria-hidden="true" className="size-5" />
+          Back to catalog
+        </Button>
         <div className="mx-auto max-w-2xl lg:max-w-none">
           <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-x-8">
             <div className="flex-shrink-0 md:w-80">
