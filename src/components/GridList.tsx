@@ -1,6 +1,5 @@
 import React from 'react';
 import defaultImage from '../assets/default-image.png';
-import AppError from './AppError';
 import { Link } from 'react-router-dom';
 import Loader from './base/Loader';
 import Card from './Card';
@@ -42,16 +41,8 @@ const CARD_CLASS_NAME =
 const GridList: React.FC<{
   items: ItemExtended[];
   loading: boolean;
-  error: string | null;
-}> = ({ items, loading, error }) => {
+}> = ({ items, loading }) => {
   if (loading) return <Loader text="Loading catalog..." />;
-
-  if (error)
-    return (
-      <div className="p-4">
-        <AppError titleError={error} codeError={404}></AppError>
-      </div>
-    );
 
   return (
     <div>

@@ -10,6 +10,7 @@ import Loader from '../components/base/Loader';
 import Button from '../components/base/Button';
 import Dropdown from '../components/base/Dropdown';
 import { fetchApiDataInventory } from '../services/apiData';
+import AppError from '../components/AppError';
 
 const Layout: React.FC<{
   loadedItems: Item[];
@@ -306,6 +307,9 @@ const Layout: React.FC<{
     setPage(1);
   };
 
+  if (errorFetchData) {
+    return <AppError titleError={inventoryError ?? 'Error fetching data'} codeError={404} />;
+  }
   return (
     <>
       <div className="min-h-[100dvh] bg-surface-canvas py-10">
@@ -335,24 +339,16 @@ const Layout: React.FC<{
           <div className="max-w-screen-3xl flex flex-col gap-12 px-4 sm:px-6 lg:flex-row lg:px-8">
             {/* Sidebar */}
             <aside className="w-full rounded-lg p-4 lg:w-1/4" aria-label="Filters">
-              {errorFetchData && (
-                <div style={{ padding: 12 }}>
-                  <strong>Filters unavailable</strong>
-                </div>
-              )}
-
-              {!errorFetchData && (
-                <SideBar
-                  manufacturersState={manufacturersState}
-                  authorsState={authorsState}
-                  repositoriesState={repositoriesState}
-                  protocolsState={protocolsState}
-                  onFilterChange={handleFilterChange}
-                  onAddProtocol={(protocol) => {
-                    setProtocolsState((prev) => [...prev, protocol]);
-                  }}
-                />
-              )}
+              <SideBar
+                manufacturersState={manufacturersState}
+                authorsState={authorsState}
+                repositoriesState={repositoriesState}
+                protocolsState={protocolsState}
+                onFilterChange={handleFilterChange}
+                onAddProtocol={(protocol) => {
+                  setProtocolsState((prev) => [...prev, protocol]);
+                }}
+              />
             </aside>
 
             {/* Results */}
@@ -394,13 +390,7 @@ const Layout: React.FC<{
               {__DEPLOY_TYPE__ !== 'SERVER_AVAILABLE' && (
                 <div>
                   {loading && <Loader text="Loading catalog..." />}
-                  {!loading && (
-                    <GridList
-                      items={deferredPaginatedItems}
-                      loading={isLoading}
-                      error={inventoryError}
-                    />
-                  )}
+                  {!loading && <GridList items={deferredPaginatedItems} loading={isLoading} />}
 
                   <Pagination
                     page={page}
@@ -413,13 +403,7 @@ const Layout: React.FC<{
               {__DEPLOY_TYPE__ === 'SERVER_AVAILABLE' && (
                 <div>
                   {loading && <Loader text="Loading catalog..." />}
-                  {!loading && (
-                    <GridList
-                      items={deferredFilteredItems}
-                      loading={isLoading}
-                      error={inventoryError}
-                    />
-                  )}
+                  {!loading && <GridList items={deferredFilteredItems} loading={isLoading} />}
 
                   <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
                 </div>
