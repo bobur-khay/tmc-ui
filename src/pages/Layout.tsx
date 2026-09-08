@@ -355,7 +355,7 @@ const Layout: React.FC<{
             </aside>
 
             {/* Results */}
-            <section className="w-3/4 flex-1">
+            <section className="w-full flex-1 lg:w-3/4">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-4 text-text-primary">
                 <p className="text-lg">
                   <span className="text-[var(--color-icon-brand)]">{resultCounts}</span> result
