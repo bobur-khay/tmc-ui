@@ -85,7 +85,7 @@ const Navbar: React.FC<{ showAuthentication: boolean }> = ({ showAuthentication 
                 variant="default"
               >
                 <span className="inline-flex items-center gap-1.5">
-                  {theme === 'dark' ? (
+                  {theme === 'light' ? (
                     <MoonIcon className="h-4 w-4" aria-hidden="true" />
                   ) : (
                     <SunIcon className="h-4 w-4" aria-hidden="true" />
