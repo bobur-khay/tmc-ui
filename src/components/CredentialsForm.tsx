@@ -13,6 +13,7 @@ interface CredentialsFormProps {
   readonly errorMessage?: string | null;
   readonly autoFocusClientId?: boolean;
   readonly isSubmitting?: boolean;
+  readonly isBordered?: boolean;
 }
 
 const CredentialsForm: React.FC<CredentialsFormProps> = ({
@@ -26,6 +27,7 @@ const CredentialsForm: React.FC<CredentialsFormProps> = ({
   onSubmit,
   submitText,
   errorMessage,
+  isBordered,
   autoFocusClientId = false,
   isSubmitting = false,
 }: CredentialsFormProps) => {
@@ -35,7 +37,9 @@ const CredentialsForm: React.FC<CredentialsFormProps> = ({
   };
 
   return (
-    <section className="w-full rounded-2xl border border-border-default bg-surface-canvas p-8 shadow-lg shadow-black/5">
+    <section
+      className={`w-full rounded-2xl bg-surface-canvas shadow-lg shadow-black/5 ${isBordered ? 'border border-border-default p-8' : ''}`}
+    >
       <div className="mb-5 space-y-3">
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-text-secondary">
           {eyebrow}
