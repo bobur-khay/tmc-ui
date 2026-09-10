@@ -21,30 +21,35 @@ import {
 } from './utils/utils';
 import { CLIENT_ID_SESSION_KEY, CLIENT_SECRET_SESSION_KEY } from './utils/constants';
 
-const AppShell: React.FC<{ showAuthentication: boolean }> = ({ showAuthentication }) => {
+function AppShell({ showAuthentication }: { showAuthentication: boolean }) {
   return (
     <>
       <Navbar showAuthentication={showAuthentication} />
       <Outlet />
     </>
   );
-};
+}
 
-const AppShellError: React.FC<{
+function AppShellError({
+  codeError,
+  titleError,
+  descriptionError,
+  showAuthentication,
+}: {
   codeError: number;
   titleError: string;
   descriptionError?: string;
   showAuthentication: boolean;
-}> = ({ codeError, titleError, descriptionError, showAuthentication }) => {
+}) {
   return (
     <>
       <Navbar showAuthentication={showAuthentication} />
       <AppError codeError={codeError} titleError={titleError} descriptionError={descriptionError} />
     </>
   );
-};
+}
 
-const App: React.FC = () => {
+export function App() {
   const [clientId, setClientId] = useState<string>(() =>
     getStoredSessionValue(CLIENT_ID_SESSION_KEY),
   );
@@ -346,6 +351,4 @@ const App: React.FC = () => {
       {routerProvider}
     </AuthProvider>
   );
-};
-
-export default App;
+}
