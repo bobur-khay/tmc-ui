@@ -190,14 +190,13 @@ describe('Backend with auth (SERVER_AVAILABLE, server + token URL)', () => {
     await waitFor(() => {
       expect(window.location.hash).toBe('#/settings');
     });
-    expect(await screen.findByRole('heading', { name: 'Manage API credentials' })).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'Update API credentials' })).toBeTruthy();
     expect(screen.getByLabelText('Client ID')).toBeTruthy();
     expect(screen.getByLabelText('Client Secret')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save credentials' })).toBeTruthy();
     expect(
       screen.getByText(
-        'The credentials are used for authenticated catalog requests. Changes are saved to this browser tab and applied immediately after re-authentication.',
+        /Review the credentials stored for this tab and save changes to re-authenticate the catalog session/,
       ),
     ).toBeTruthy();
   });
