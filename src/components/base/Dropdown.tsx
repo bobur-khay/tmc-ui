@@ -50,7 +50,7 @@ const Dropdown: React.FC<IDropdownProps> = (props) => {
   const wrapperClassName = [props.wrapperClassName, 'relative'].filter(Boolean).join(' ');
 
   const triggerClassName = [
-    "relative before:pointer-events-none before:absolute before:left-[-3px] before:top-[-3px] before:right-[-3px] before:bottom-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-visible:outline-none focus-visible:before:opacity-100 hover:rounded-[2px] hover:border hover:border-border-interactive-hover hover:bg-surface-input-hover",
+    "relative before:pointer-events-none before:absolute before:left-[-3px] before:top-[-3px] before:right-[-3px] before:bottom-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-visible:outline-none focus-visible:before:opacity-100 hover:rounded-[2px]  hover:bg-surface-input-hover",
     'text-icon-brand text-sm font-normal not-italic',
     props.className,
     props.showChevron ? 'pr-12' : '',

@@ -126,11 +126,11 @@ describe('Backend with auth (SERVER_AVAILABLE, server + token URL)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Filters' })).toBeTruthy();
     expect(await screen.findByRole('link', { name: 'Dashboard' })).toBeTruthy();
-    expect(await screen.findByRole('link', { name: 'Settings' })).toBeTruthy();
-    expect(await screen.findByText('Protocol')).toBeTruthy();
-    expect(await screen.findByText('Manufacturer')).toBeTruthy();
-    expect(await screen.findByText('Author')).toBeTruthy();
-    expect(await screen.findByText('Repository')).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'API Authentication' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Protocol' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Manufacturer' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Author' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Repository' })).toBeTruthy();
     expect(screen.queryByText('Enter API credentials')).toBeNull();
     expect(screen.queryByText('Environment not configured')).toBeNull();
     expect(mockFetchApiInventory).toHaveBeenCalledWith(
@@ -153,11 +153,11 @@ describe('Backend with auth (SERVER_AVAILABLE, server + token URL)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Filters' })).toBeTruthy();
     expect(await screen.findByRole('link', { name: 'Dashboard' })).toBeTruthy();
-    expect(await screen.findByRole('link', { name: 'Settings' })).toBeTruthy();
-    expect(await screen.findByText('Protocol')).toBeTruthy();
-    expect(await screen.findByText('Manufacturer')).toBeTruthy();
-    expect(await screen.findByText('Author')).toBeTruthy();
-    expect(await screen.findByText('Repository')).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'API Authentication' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Protocol' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Manufacturer' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Author' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Repository' })).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'ThingasLamp', level: 3 })).toBeTruthy();
     await waitFor(() => {
       expect(document.body.textContent?.replace(/\s+/g, ' ')).toContain('1 result found');
@@ -185,19 +185,18 @@ describe('Backend with auth (SERVER_AVAILABLE, server + token URL)', () => {
       expect(document.body.textContent?.replace(/\s+/g, ' ')).toContain('1 result found');
     });
 
-    fireEvent.click(screen.getByRole('link', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('link', { name: 'API Authentication' }));
 
     await waitFor(() => {
       expect(window.location.hash).toBe('#/settings');
     });
-    expect(await screen.findByRole('heading', { name: 'Manage API credentials' })).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'Update API credentials' })).toBeTruthy();
     expect(screen.getByLabelText('Client ID')).toBeTruthy();
     expect(screen.getByLabelText('Client Secret')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save credentials' })).toBeTruthy();
     expect(
       screen.getByText(
-        'Changes are saved to this browser tab and applied immediately after re-authentication.',
+        /Review the credentials stored for this tab and save changes to re-authenticate the catalog session/,
       ),
     ).toBeTruthy();
   });

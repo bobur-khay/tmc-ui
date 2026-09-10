@@ -287,6 +287,8 @@ describe('Static deployment integration tests', () => {
     expect(await screen.findByText('LampAuthor')).toBeTruthy();
     expect(await screen.findByRole('heading', { name: 'Additional details' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Open full details' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to catalog' }));
+    expect(await screen.findByRole('heading', { name: 'ThingasLamp', level: 3 })).toBeTruthy();
     expect(mockFetchLocalThingModel).toHaveBeenCalledWith(
       '/omnicorp/omnicorp/lightall/ThingasLamp.tm.json',
     );

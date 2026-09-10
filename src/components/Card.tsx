@@ -26,22 +26,19 @@ const Card: React.FC<CardProps> = ({
   });
 
   return (
-    <div className="flex w-full flex-col items-start space-y-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:space-x-6 sm:space-y-0">
-      <div className="flex-1 truncate text-text-primary">
-        <div className="flex items-center space-x-3">
-          <h3 className="text-sm font-medium">{title ?? ''}</h3>
+    <div className="flex h-full w-full flex-col p-5 text-text-primary">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-semibold leading-6">{title ?? ''}</h3>
+          <p className="mt-1 truncate text-sm text-text-secondary">{manufacturer}</p>
+          <span className="mt-3 inline-flex max-w-full items-center truncate rounded-full bg-overlay-success-tint px-2.5 py-1 text-xs font-medium text-status-success">
+            {author}
+          </span>
         </div>
-        <span className="inline-flex shrink-0 items-center rounded-full bg-overlay-success-tint p-2 text-xs font-medium text-status-success">
-          {author}
-        </span>
-        <p className="mt-1 truncate text-sm text-text-secondary">{manufacturer}</p>
-        {children}
-      </div>
-      <div className="flex-1">
-        <div className="inline-flex rounded-lg bg-media p-4 shadow-md">
+        <div className="relative size-24 shrink-0 rounded-lg bg-media p-3 shadow-sm">
           {isLoading && (
             <div
-              className="aspect-square size-28 shrink-0 animate-pulse rounded-lg bg-surface-panel"
+              className="absolute inset-3 animate-pulse rounded-md bg-surface-panel"
               aria-label="Loading image"
             />
           )}
@@ -51,10 +48,11 @@ const Card: React.FC<CardProps> = ({
             src={currentSrc}
             onLoad={handleLoad}
             onError={handleError}
-            className={`aspect-square size-28 shrink-0 rounded-lg object-contain${isLoading ? 'visibility-hidden' : ''}`}
+            className={`size-full object-contain transition-opacity ${isLoading ? 'opacity-0' : 'opacity-100'}`}
           />
         </div>
       </div>
+      {children}
     </div>
   );
 };

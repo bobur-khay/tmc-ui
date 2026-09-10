@@ -10,10 +10,10 @@ interface CredentialsFormProps {
   readonly onClientSecretChange: (value: string) => void;
   readonly onSubmit: () => void;
   readonly submitText: string;
-  readonly helperText: string;
   readonly errorMessage?: string | null;
   readonly autoFocusClientId?: boolean;
   readonly isSubmitting?: boolean;
+  readonly isBordered?: boolean;
 }
 
 const CredentialsForm: React.FC<CredentialsFormProps> = ({
@@ -26,8 +26,8 @@ const CredentialsForm: React.FC<CredentialsFormProps> = ({
   onClientSecretChange,
   onSubmit,
   submitText,
-  helperText,
   errorMessage,
+  isBordered,
   autoFocusClientId = false,
   isSubmitting = false,
 }: CredentialsFormProps) => {
@@ -37,23 +37,25 @@ const CredentialsForm: React.FC<CredentialsFormProps> = ({
   };
 
   return (
-    <section className="w-full rounded-2xl border border-border-default bg-surface-canvas p-8 shadow-lg shadow-black/5">
-      <div className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-[0.24em] text-text-secondary">
+    <section
+      className={`w-full rounded-2xl bg-surface-canvas shadow-lg shadow-black/5 ${isBordered ? 'border border-border-default p-8' : ''}`}
+    >
+      <div className="mb-5 space-y-3">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-text-secondary">
           {eyebrow}
         </p>
         <h1 className="text-3xl font-semibold text-text-primary">{title}</h1>
         <p className="text-sm leading-6 text-text-secondary">{description}</p>
       </div>
 
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         {errorMessage ? (
           <div className="rounded-md border border-status-error bg-status-error-soft px-4 py-3 text-sm text-status-error">
             <span>Error on credentials</span>
           </div>
         ) : null}
 
-        <label className="block space-y-2">
+        <label className="block space-y-1">
           <span className="text-sm font-medium text-text-primary">Client ID</span>
           <input
             autoFocus={autoFocusClientId}
@@ -80,8 +82,7 @@ const CredentialsForm: React.FC<CredentialsFormProps> = ({
           />
         </label>
 
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-text-secondary">{helperText}</p>
+        <div className="mt-5 flex items-center justify-between gap-4">
           <Button
             text={isSubmitting ? 'Saving...' : submitText}
             type="submit"

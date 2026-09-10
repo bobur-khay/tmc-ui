@@ -2,15 +2,15 @@ import React from 'react';
 import Button from './base/Button';
 
 type AppErrorProps = {
-  codeError: number;
+  codeError?: number; // TODO: create a proper error code handling mechanism
   titleError?: string;
   descriptionError?: string;
 };
 
-const DEFAULT_DESCRIPTION_ERROR = 'Oops! We couldn’t locate the catalog you requested.';
+const DEFAULT_DESCRIPTION_ERROR = 'Please try again later';
 
-const AppError: React.FC<AppErrorProps> = ({ codeError, titleError, descriptionError }) => {
-  const resolvedTitleError = titleError ?? 'Page not found';
+const AppError: React.FC<AppErrorProps> = ({ titleError, descriptionError }) => {
+  const resolvedTitleError = titleError ?? 'An unknown error occurred';
   const resolvedDescriptionError = descriptionError ?? DEFAULT_DESCRIPTION_ERROR;
 
   const handleReload = () => {
@@ -21,7 +21,8 @@ const AppError: React.FC<AppErrorProps> = ({ codeError, titleError, descriptionE
     <>
       <div className="grid min-h-dvh place-items-center bg-surface-canvas px-6 py-24 sm:py-32 lg:px-8">
         <div className="text-center">
-          <p className="text-base font-semibold text-status-error">Error {codeError}</p>
+          {/* Not fully functional yet */}
+          {/* <p className="text-base font-semibold text-status-error">Error {codeError}</p> */}
           <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-text-primary sm:text-7xl">
             {resolvedTitleError}
           </h1>

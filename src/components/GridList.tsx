@@ -1,6 +1,5 @@
 import React from 'react';
 import defaultImage from '../assets/default-image.png';
-import AppError from './AppError';
 import { Link } from 'react-router-dom';
 import Loader from './base/Loader';
 import Card from './Card';
@@ -37,25 +36,20 @@ const buildItemImageSrc = (
 };
 
 const CARD_CLASS_NAME =
-  "col-span-1 relative rounded-[4px] border border-border-default bg-surface-panel shadow-md before:pointer-events-none before:absolute before:bottom-[-3px] before:left-[-3px] before:right-[-3px] before:top-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-within:rounded-[4px] focus-within:border focus-within:border-border-default focus-within:bg-surface-panel focus-within:outline-none focus-within:before:opacity-100 hover:bg-surface-panel-hover hover:shadow-sm hover:outline-interactive-support-hover";
+  "relative min-w-0 rounded-[4px] border border-border-default bg-surface-panel shadow-md before:pointer-events-none before:absolute before:bottom-[-3px] before:left-[-3px] before:right-[-3px] before:top-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-within:rounded-[4px] focus-within:border focus-within:border-border-default focus-within:bg-surface-panel focus-within:outline-none focus-within:before:opacity-100 hover:bg-surface-panel-hover hover:shadow-sm hover:outline-interactive-support-hover";
 
 const GridList: React.FC<{
   items: ItemExtended[];
   loading: boolean;
-  error: string | null;
-}> = ({ items, loading, error }) => {
+}> = ({ items, loading }) => {
   if (loading) return <Loader text="Loading catalog..." />;
 
-  if (error)
-    return (
-      <div className="p-4">
-        <AppError titleError={error} codeError={404}></AppError>
-      </div>
-    );
-
   return (
-    <div>
-      <ul role="list" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="w-full">
+      <ul
+        role="list"
+        className="grid grid-cols-[repeat(auto-fit,minmax(min(18rem,100%),1fr))] gap-6"
+      >
         {items.map((itemTM, i) => {
           const key = buildItemKey(itemTM, i);
           const title = itemTM.name ?? itemTM.tmName;
@@ -65,6 +59,7 @@ const GridList: React.FC<{
           return (
             <li key={key} className={CARD_CLASS_NAME}>
               <Link
+                className="block h-full"
                 to={`/details/${title}`}
                 state={{
                   item: itemTM,
@@ -80,21 +75,34 @@ const GridList: React.FC<{
                   imageAlt={`Product image of ${title}`}
                   imageFallbackSrc={DEFAULT_IMAGE_SRC}
                 >
-                  <p className="mt-1 truncate text-sm text-text-secondary">
-                    {itemTM.links?.content ?? ''}
-                  </p>
-                  <p className="mt-1 truncate text-sm text-text-secondary">
-                    {itemTM.repo?.concat(', ') ?? ''}
-                  </p>
-                  <p className="mt-1 truncate text-sm text-text-secondary">
-                    {itemTM['schema:mpn']}
-                  </p>
-                  <p className="mt-1 truncate text-sm text-text-secondary">
-                    {itemTM['schema:description'] ?? ''}
-                  </p>
-                  <p className="mt-1 truncate text-sm text-text-secondary">
-                    {versionCount} Version{versionCount > 1 ? 's' : ''} available
-                  </p>
+                  <div className="mt-5 flex flex-1 flex-col border-t border-border-subtle pt-4">
+                    {itemTM['schema:description'] && (
+                      <p className="mb-4 line-clamp-2 text-sm leading-5 text-text-secondary">
+                        {itemTM['schema:description']}
+                      </p>
+                    )}
+                    <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
+                      <dt className="font-medium text-text-tertiary">Repository</dt>
+                      <dd className="truncate text-right text-text-primary">
+                        {itemTM.repo ?? '—'}
+                      </dd>
+                      <dt className="font-medium text-text-tertiary">Model ID</dt>
+                      <dd className="truncate text-right text-text-primary">
+                        {itemTM['schema:mpn'] ?? '—'}
+                      </dd>
+                      {itemTM.links?.content && (
+                        <>
+                          <dt className="font-medium text-text-tertiary">Content</dt>
+                          <dd className="truncate text-right text-text-primary">
+                            {itemTM.links.content}
+                          </dd>
+                        </>
+                      )}
+                    </dl>
+                    <p className="mt-auto pt-5 text-xs font-semibold uppercase text-interactive-support">
+                      {versionCount} version{versionCount === 1 ? '' : 's'} available
+                    </p>
+                  </div>
                 </Card>
               </Link>
             </li>

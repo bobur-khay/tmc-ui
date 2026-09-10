@@ -22,7 +22,7 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-const Navbar: React.FC<{ showSettings: boolean }> = ({ showSettings }) => {
+const Navbar: React.FC<{ showAuthentication: boolean }> = ({ showAuthentication }) => {
   const location = useLocation();
   const [theme, setTheme] = useState<ThemeName>(() => getStoredTheme());
 
@@ -32,10 +32,10 @@ const Navbar: React.FC<{ showSettings: boolean }> = ({ showSettings }) => {
 
   let navigation: NavItem[] = [];
 
-  if (showSettings) {
+  if (showAuthentication) {
     navigation = [
       { name: 'Dashboard', href: '/', current: true },
-      { name: 'Settings', href: '/settings', current: false },
+      { name: 'API Authentication', href: '/settings', current: false },
     ];
   } else {
     navigation = [{ name: 'Dashboard', href: '/', current: true }];
@@ -43,7 +43,7 @@ const Navbar: React.FC<{ showSettings: boolean }> = ({ showSettings }) => {
 
   return (
     <Disclosure as="nav" className="border-b border-surface-panel-hover bg-surface-panel">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between">
           <div className="flex w-full items-center justify-between gap-6">
             <div className="flex shrink-0 items-center">
@@ -85,7 +85,7 @@ const Navbar: React.FC<{ showSettings: boolean }> = ({ showSettings }) => {
                 variant="default"
               >
                 <span className="inline-flex items-center gap-1.5">
-                  {theme === 'dark' ? (
+                  {theme === 'light' ? (
                     <MoonIcon className="h-4 w-4" aria-hidden="true" />
                   ) : (
                     <SunIcon className="h-4 w-4" aria-hidden="true" />
