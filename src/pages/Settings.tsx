@@ -71,7 +71,8 @@ const Settings: React.FC<SettingsProps> = ({
         <CredentialsForm
           eyebrow="API Authentication"
           title="Update API credentials"
-          description="The credentials are used for authenticated catalog requests. Changes are saved to this browser tab and applied immediately after re-authentication."
+          description=" Review the credentials stored for this tab and save changes to re-authenticate the
+            catalog session"
           clientId={newClientId}
           clientSecret={newClientSecret}
           onClientIdChange={setNewClientId}
