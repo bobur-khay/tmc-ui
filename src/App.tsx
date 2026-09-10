@@ -21,10 +21,10 @@ import {
 } from './utils/utils';
 import { CLIENT_ID_SESSION_KEY, CLIENT_SECRET_SESSION_KEY } from './utils/constants';
 
-const AppShell: React.FC<{ showSettings: boolean }> = ({ showSettings }) => {
+const AppShell: React.FC<{ showAuthentication: boolean }> = ({ showAuthentication }) => {
   return (
     <>
-      <Navbar showAuthentication={showSettings} />
+      <Navbar showAuthentication={showAuthentication} />
       <Outlet />
     </>
   );
@@ -34,11 +34,11 @@ const AppShellError: React.FC<{
   codeError: number;
   titleError: string;
   descriptionError?: string;
-  showSettings: boolean;
-}> = ({ codeError, titleError, descriptionError, showSettings }) => {
+  showAuthentication: boolean;
+}> = ({ codeError, titleError, descriptionError, showAuthentication }) => {
   return (
     <>
-      <Navbar showAuthentication={showSettings} />
+      <Navbar showAuthentication={showAuthentication} />
       <AppError codeError={codeError} titleError={titleError} descriptionError={descriptionError} />
     </>
   );
@@ -222,7 +222,7 @@ const App: React.FC = () => {
                     descriptionError={
                       'Required deployment variables are missing. Please contact the deployment administrator to resolve this configuration issue.'
                     }
-                    showSettings={showSettings}
+                    showAuthentication={showSettings}
                     codeError={401}
                   />
                 ),
@@ -230,12 +230,12 @@ const App: React.FC = () => {
             ]
           : [
               {
-                element: <AppShell showSettings={showSettings} />,
+                element: <AppShell showAuthentication={showSettings} />,
                 errorElement: (
                   <AppShellError
                     titleError={'Settings not found'}
                     codeError={401}
-                    showSettings={showSettings}
+                    showAuthentication={showSettings}
                   />
                 ),
                 children: showSetupCredentials
@@ -319,12 +319,10 @@ const App: React.FC = () => {
     ],
   );
 
-  if (showSetupCredentials) {
-    return <RouterProvider router={router} future={{ v7_startTransition: true }} />;
-  }
+  const routerProvider = <RouterProvider router={router} future={{ v7_startTransition: true }} />;
 
-  if (missingRequiredEnvConfig) {
-    return <RouterProvider router={router} future={{ v7_startTransition: true }} />;
+  if (showSetupCredentials || missingRequiredEnvConfig) {
+    return routerProvider;
   }
 
   if (shouldValidateStoredCredentials) {
@@ -345,7 +343,7 @@ const App: React.FC = () => {
       enabled={authIsEnabled}
       seedToken={seedToken}
     >
-      <RouterProvider router={router} future={{ v7_startTransition: true }} />
+      {routerProvider}
     </AuthProvider>
   );
 };
