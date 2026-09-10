@@ -157,6 +157,8 @@ const App: React.FC = () => {
   }, [clientId, clientSecret, handleCredentialsCommit, tokenUrl]);
 
   useEffect(() => {
+    // TMC Version Control
+
     if (!shouldValidateStoredCredentials) {
       return;
     }

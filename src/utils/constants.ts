@@ -46,3 +46,5 @@ export const CLIENT_ID_SESSION_KEY = 'tmc-ui.client-id';
 export const CLIENT_SECRET_SESSION_KEY = 'tmc-ui.client-secret';
 
 export const CREDENTIALS_SUBMITTED_SESSION_KEY = 'tmc-ui.credentials-submitted';
+
+export const MIN_TMC_VERSION_REQUIRED = '1.5.0';
