@@ -1,0 +1,86 @@
+declare module '*.png' {
+  const src: string;
+  export default src;
+}
+
+declare module '*.svg' {
+  const src: string;
+  export default src;
+}
+
+declare const __API_BASE__: string | undefined;
+
+declare const __CATALOG_URL__: string; //TODO
+
+declare const __SERVER_AVAILABLE__: boolean;
+
+declare const __APP_REPO_URL__: string;
+
+declare const __CATALOG_REPO_URL__: string; //TODO
+
+interface ImportMetaEnv {
+  readonly BASE_URL: string; //TODO
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
+interface ItemExtended extends Item {
+  name?: string;
+}
+
+type Link = {
+  self: string;
+  content?: string;
+  [key: string]: string | undefined;
+};
+
+type Version = {
+  description: string;
+  digest: string;
+  externalID: string;
+  links: Link;
+  repo: string;
+  timestamp: string;
+  tmID: string;
+  version: {
+    model: string;
+  };
+};
+
+type Attachments = {
+  links: Link;
+  name: string;
+  mediaType: string;
+};
+
+type Item = {
+  attachments?: Attachments[];
+  links: Link;
+  repo: string;
+  'schema:author': {
+    'schema:name': string;
+    [key: string]: string;
+  };
+  'schema:manufacturer': {
+    'schema:name': string;
+    [key: string]: string;
+  };
+  'schema:mpn': string;
+  tmName?: string;
+  name?: string;
+  versions: Version[] | null;
+};
+
+type Filters = {
+  id: string;
+  name: string;
+  options: FilterData[];
+}[];
+
+type FilterData = {
+  value: string;
+  label: string;
+  checked: boolean;
+};

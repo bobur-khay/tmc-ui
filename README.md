@@ -34,18 +34,18 @@ Rename a `example.env` file in the repository root to `.env` or create a new `.e
 
 ```dotenv
 SERVER_AVAILABLE=true
-VITE_SERVER_URL=https://example.com:8080
+SERVER_URL=https://example.com:8080
 LOCAL=true
 ```
 
 #### Backend with authentication
 
-TMC UI uses the OAuth 2.0 client credentials flow when `VITE_TOKEN_URL` is configured.
+TMC UI uses the OAuth 2.0 client credentials flow when `TOKEN_URL` is configured.
 
 ```dotenv
 SERVER_AVAILABLE=true
-VITE_SERVER_URL=http://localhost:8080
-VITE_TOKEN_URL=https://auth.example.local/oauth/token
+SERVER_URL=http://localhost:8080
+TOKEN_URL=https://auth.example.local/oauth/token
 LOCAL=true
 ```
 
@@ -59,7 +59,7 @@ yarn dev
 
 Open the URL printed by Vite. When authentication is enabled, enter the client ID and client secret on the setup screen. Credentials are stored only for the current browser tab, and the access token is kept in memory.
 
-`LOCAL=true` enables the Vite development proxy. Omit it when the deployed UI can contact `VITE_SERVER_URL` directly and the backend allows requests from the UI origin.
+`LOCAL=true` enables the Vite development proxy. Omit it when the deployed UI can contact `SERVER_URL` directly and the backend allows requests from the UI origin.
 
 ## 2. DevOps user
 
@@ -67,11 +67,11 @@ Use this path to deploy TMC UI by configuration only. The same scripts support a
 
 ### Deployment patterns
 
-| Pattern | Configuration | TM source |
-| --- | --- | --- |
-| Backend | `SERVER_AVAILABLE=true` | A running TMC API at `VITE_SERVER_URL` |
+| Pattern                       | Configuration                                                        | TM source                                       |
+| ----------------------------- | -------------------------------------------------------------------- | ----------------------------------------------- |
+| Backend                       | `SERVER_AVAILABLE=true`                                              | A running TMC API at `SERVER_URL`               |
 | Static, separate repositories | `SERVER_AVAILABLE=false`, with `APP_REPO_URL` and `CATALOG_REPO_URL` | Catalog cloned into `public/` during deployment |
-| Static, combined repository | `SERVER_AVAILABLE=false`, with catalog files already under `public/` | Catalog shipped with the UI repository |
+| Static, combined repository   | `SERVER_AVAILABLE=false`, with catalog files already under `public/` | Catalog shipped with the UI repository          |
 
 Static deployments do not support backend-only features such as server-side filtering or free text search.
 
@@ -79,25 +79,25 @@ Static deployments do not support backend-only features such as server-side filt
 
 Create `.env` in the deployment working directory. Values are read by `deploy.sh` and Vite.
 
-| Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `SERVER_AVAILABLE` | Yes | `false` | Selects backend (`true`) or static (`false`) mode. Only these two values are supported. |
-| `VITE_SERVER_URL` | Yes when server available | `http://localhost:8080` for API requests | TMC API base URL. |
-| `VITE_TOKEN_URL` | Yes when server available with auth. | None | OAuth 2.0 token endpoint. Its presence enables the client credentials screen. |
-| `APP_REPO_URL` | Yes when the working directory has no UI source | `https://github.com/wot-oss/tmc-ui.git` | Repository containing `package.json` and `src/`. |
-| `CATALOG_REPO_URL` | Yes in static deployment with separate catalog repository | `https://github.com/wot-oss/example-catalog.git` | Repository containing the static catalog. |
-| `LOCAL` | No | `false` | Uses the Vite API proxy when set to `true`. |
-| `VITE_EDITDOR_URL` | No | `https://eclipse-editdor.github.io/editdor/` | Target for the **Open with EdiTDor** action. |
-| `VITE_PLAYGROUND_URL` | No | `https://playground.thingweb.io/` | Target for the **Open with TD Playground** action. |
-| `VITE_SETUP_CREDENTIALS_MESSAGE` | No | Empty | Operator guidance shown on the credentials screen. |
+| Variable                    | Required                                                  | Default                                          | Purpose                                                                                 |
+| --------------------------- | --------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `SERVER_AVAILABLE`          | Yes                                                       | `false`                                          | Selects backend (`true`) or static (`false`) mode. Only these two values are supported. |
+| `SERVER_URL`                | Yes when server available                                 | `http://localhost:8080` for API requests         | TMC API base URL.                                                                       |
+| `TOKEN_URL`                 | Yes when server available with auth.                      | None                                             | OAuth 2.0 token endpoint. Its presence enables the client credentials screen.           |
+| `APP_REPO_URL`              | Yes when the working directory has no UI source           | `https://github.com/wot-oss/tmc-ui.git`          | Repository containing `package.json` and `src/`.                                        |
+| `CATALOG_REPO_URL`          | Yes in static deployment with separate catalog repository | `https://github.com/wot-oss/example-catalog.git` | Repository containing the static catalog.                                               |
+| `LOCAL`                     | No                                                        | `false`                                          | Uses the Vite API proxy when set to `true`.                                             |
+| `EDITDOR_URL`               | No                                                        | `https://eclipse-editdor.github.io/editdor/`     | Target for the **Open with EdiTDor** action.                                            |
+| `PLAYGROUND_URL`            | No                                                        | `https://playground.thingweb.io/`                | Target for the **Open with TD Playground** action.                                      |
+| `CREDENTIALS_SETUP_MESSAGE` | No                                                        | Empty                                            | Operator guidance shown on the credentials screen.                                      |
 
 Example backend deployment:
 
 ```dotenv
 SERVER_AVAILABLE=true
-VITE_SERVER_URL=https://tmc.example.com
-VITE_TOKEN_URL=https://auth.example.com/oauth/token
-VITE_SETUP_CREDENTIALS_MESSAGE=Contact the platform team to request access.
+SERVER_URL=https://tmc.example.com
+TOKEN_URL=https://auth.example.com/oauth/token
+CREDENTIALS_SETUP_MESSAGE=Contact the platform team to request access.
 ```
 
 Example static deployment with separate repositories:
@@ -200,7 +200,7 @@ Keep changes compatible with all three modes. Backend behavior lives in `src/ser
 
 ### Authentication flow
 
-Authentication is enabled only when backend mode, `VITE_SERVER_URL`, and `VITE_TOKEN_URL` are all configured.
+Authentication is enabled only when backend mode, `SERVER_URL`, and `TOKEN_URL` are all configured.
 
 1. `src/App.tsx` decides whether credentials are required and blocks catalog routes until validation succeeds.
 2. `src/services/auth.ts` requests a token with the OAuth 2.0 client credentials grant.
