@@ -15,7 +15,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import AppError from './_components/AppError';
 import Loader from './_components/base/Loader';
 import Navbar from './_components/Navbar';
-import CredentialsPrompt from './_components/SetupCredentials';
+import CredentialsPrompt from './_components/AuthenticationForm';
 import Details from './pages/Details';
 import LayoutLoadData from './pages/LayoutLoadData';
 import Settings from './pages/Settings';

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CredentialsForm from '../components/CredentialsForm';
 import {
   requestClientCredentialsToken,
   type RequestClientCredentialsTokenResult,

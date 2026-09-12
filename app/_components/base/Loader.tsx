@@ -15,11 +15,11 @@ const Loader: React.FC<LoaderProps> = ({ text, className = '' }: LoaderProps) =>
 
   return (
     <div className={containerClassName} role="status" aria-live="polite">
-      <div className="flex items-center justify-center px-4 text-text-primary">
+      <div className="text-text-primary flex items-center justify-center px-4">
         {LOADER_DOTS.map((dotIndex) => (
           <span
             key={dotIndex}
-            className="inline-block animate-loader-slide-fade text-xl opacity-0"
+            className="animate-loader-slide-fade inline-block text-xl opacity-0"
             style={{ animationDelay: `${(LOADER_DOTS.length - 1 - dotIndex) * 100}ms` }}
             aria-hidden="true"
           >
@@ -27,7 +27,7 @@ const Loader: React.FC<LoaderProps> = ({ text, className = '' }: LoaderProps) =>
           </span>
         ))}
       </div>
-      {text ? <span className="text-sm text-text-secondary">{text}</span> : null}
+      {text ? <span className="text-text-secondary text-sm">{text}</span> : null}
       <span className="sr-only">{text ?? 'Loading'}</span>
     </div>
   );

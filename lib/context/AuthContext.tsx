@@ -6,21 +6,18 @@ export const AuthProvider = ({
   tokenUrl,
   clientId,
   clientSecret,
-  enabled = true,
   seedToken = null,
 }: AuthProviderProps) => {
   const tokenState = useClientCredentialsToken({
     tokenUrl: tokenUrl ?? '',
     clientId: clientId ?? '',
     clientSecret: clientSecret ?? '',
-    enabled: enabled,
     seedToken,
   });
 
   return (
     <AuthContext.Provider
       value={{
-        enabled,
         accessToken: tokenState.accessToken,
         authorizationHeader: tokenState.authorizationHeader,
         expiresAt: tokenState.expiresAt,
@@ -30,7 +27,7 @@ export const AuthProvider = ({
         error: tokenState.error,
         requestToken: tokenState.requestToken,
         clearToken: tokenState.clearToken,
-        serverUrl: __API_BASE__,
+        serverUrl: process.env.API_BASE,
       }}
     >
       {children}

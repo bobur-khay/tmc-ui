@@ -1,3 +1,5 @@
+import { isNonEmptyString } from '../utils/strings';
+
 interface ClientCredentialsTokenResponse {
   access_token: string;
   token_type: string;
@@ -20,17 +22,6 @@ export interface RequestClientCredentialsTokenResult {
 
 const TOKEN_EXPIRY_SKEW_MS = 30_000;
 
-export async function buildTokenRequestError(response: Response): Promise<Error> {
-  let message = `Token request failed with status ${response.status}`;
-  const fallback = await response.text().catch(() => '');
-
-  if (fallback) {
-    message = fallback;
-  }
-
-  return new Error(message);
-}
-
 export async function requestClientCredentialsToken(
   options: RequestClientCredentialsTokenOptions,
 ): Promise<RequestClientCredentialsTokenResult> {
@@ -51,7 +42,11 @@ export async function requestClientCredentialsToken(
   });
 
   if (!response.ok) {
-    throw await buildTokenRequestError(response);
+    const message =
+      (await response.text().catch(() => '')) ??
+      `Token request failed with status ${response.status}`;
+
+    throw new Error(message);
   }
 
   const payload = (await response.json()) as ClientCredentialsTokenResponse;
@@ -70,4 +65,11 @@ export async function requestClientCredentialsToken(
     accessToken: nextAccessToken,
     expiresAt: nextExpiresAt,
   };
+}
+
+export function isAuthenticationEnabled(
+  serverUrl: string | undefined | null,
+  tokenUrl: string | undefined | null,
+) {
+  return isNonEmptyString(serverUrl) && isNonEmptyString(tokenUrl);
 }

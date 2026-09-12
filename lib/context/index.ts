@@ -12,7 +12,6 @@ export interface AuthProviderProps {
 }
 
 export interface AuthContextType {
-  readonly enabled: boolean;
   readonly accessToken: string | null;
   readonly authorizationHeader: string | null;
   readonly expiresAt: number | null;
