@@ -1,5 +1,5 @@
 import { useClientCredentialsToken } from '../hooks/useClientCredentialsToken';
-import { AuthContext, type AuthProviderProps } from './index';
+import { AuthContext, type AuthProviderProps } from './context';
 
 export const AuthProvider = ({
   children,

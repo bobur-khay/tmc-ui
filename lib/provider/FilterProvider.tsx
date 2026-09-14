@@ -8,7 +8,7 @@ import {
 
 import { fetchLocalDataFilters } from '../services/localData';
 import { useAuth } from '../hooks/useAuth';
-import { FilterContext } from './index';
+import { FilterContext } from './context';
 
 interface FilterProviderProps {
   readonly children: React.ReactNode;

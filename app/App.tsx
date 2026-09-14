@@ -1,4 +1,4 @@
-import { AuthProvider } from '@/lib/context/AuthContext';
+import { AuthProvider } from '@/lib/provider/AuthProvider';
 import {
   type RequestClientCredentialsTokenResult,
   requestClientCredentialsToken,

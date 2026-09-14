@@ -1,7 +1,7 @@
 'use client';
 
 import { type JSX, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { AuthProvider } from '../../lib/context/AuthContext';
+import { AuthProvider } from '../../lib/provider/AuthProvider';
 import {
   isAuthenticationEnabled,
   requestClientCredentialsToken,
