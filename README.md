@@ -202,6 +202,28 @@ Keep changes compatible with all three modes. Backend behavior lives in `src/ser
 
 Authentication is enabled only when backend mode, `SERVER_URL`, and `TOKEN_URL` are all configured.
 
+```mermaid
+---
+config:
+  theme: redux
+---
+flowchart TB
+    n1["layout.tsx"] -- serverUrl, tokenUrl --> n2["AuthenticationGuard.tsx"]
+    n2 --> n3(["!!serverUrl &amp;&amp; !!tokenUrl"])
+    n3 -- no --> n5["App without authentication"]
+    n3 -- yes --> n4["Access the local store"]
+    n4 -- clientId, clientSecret --> n6(["!!clientId &amp;&amp; !!clientSecret"])
+    n6 -- no --> n8["AuthenticationForm.tsx"]
+    n8 -- clientId, clientSecret, seedToken --> n9(["!!seedToken"])
+    n6 -- yes --> n9
+    n9 -- no --> n10["requestClientCredentialsToken()"]
+    n9 -- yes --> n11["AuthProvider.tsx"]
+    n10 -- token --> n9
+
+    n1@{ shape: rect}
+  style n11 fill:#dcffdc,color:#000
+```
+
 1. `src/App.tsx` decides whether credentials are required and blocks catalog routes until validation succeeds.
 2. `src/services/auth.ts` requests a token with the OAuth 2.0 client credentials grant.
 3. `src/hooks/useClientCredentialsToken.ts` owns in-memory token state and expiry handling.

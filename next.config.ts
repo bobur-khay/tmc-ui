@@ -3,7 +3,12 @@ import type { NextConfig } from 'next';
 const SERVER_URL = process.env.SERVER_URL ?? process.env.VITE_SERVER_URL;
 
 const nextConfig: NextConfig = {
-  // Backwards compatibility with legacy env vars
+  /*
+  IMPORTANT:
+  The env vars defined here become public and you should not define secrets here.
+
+  Some vars have been renamed and backwards compatibility is provided
+  */
   env: {
     SERVER_URL,
     TOKEN_URL: process.env.TOKEN_URL ?? process.env.VITE_TOKEN_URL,

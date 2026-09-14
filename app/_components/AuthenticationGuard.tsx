@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { type JSX, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { AuthProvider } from '../../lib/context/AuthContext';
 import {
   isAuthenticationEnabled,
@@ -8,14 +8,15 @@ import {
   type RequestClientCredentialsTokenResult,
 } from '../../lib/services/auth';
 import { CLIENT_ID_SESSION_KEY, CLIENT_SECRET_SESSION_KEY } from '../../lib/utils/constants';
+import { isNonEmptyString } from '../../lib/utils/strings';
 import {
   clearStoredCredentialsSession,
   getStoredSessionValue,
   setStoredSessionValue,
 } from '../../lib/utils/storage';
 import { ValidationLoader } from './ValidationLoader';
-import { isNonEmptyString } from '@/lib/utils/strings';
 import { AuthenticationForm } from './AuthenticationForm';
+import Navbar from './Navbar';
 
 interface AuthenticationGuardProps {
   readonly children: ReactNode;
@@ -29,84 +30,59 @@ export default function AuthenticationGuard({
   tokenUrl = '',
 }: AuthenticationGuardProps) {
   // Credentials
-  const [clientId, setClientId] = useState('');
-  const [clientSecret, setClientSecret] = useState('');
-  const [seedToken, setSeedToken] = useState<RequestClientCredentialsTokenResult | null>(null);
-  console.log(clientId, clientSecret);
-  console.log(seedToken);
+  const [clientIdInput, setClientIdInput] = useState('');
+  const [clientSecretInput, setClientSecretInput] = useState('');
+  const [validatedToken, setValidatedToken] = useState<RequestClientCredentialsTokenResult | null>(
+    null,
+  );
 
-  // App states
+  //Authentication states
   const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
-  const [isValidatingCredentials, setIsValidatingCredentials] = useState(shouldValidateCredentials);
-  const [isMounted, setIsMounted] = useState(false);
-  const [areClientCredentialsProvided, setAreClientCredentialsProvided] = useState(false);
+  const [isValidatingCredentials, setIsValidatingCredentials] = useState(false);
 
   // Authentication status
   const isAuthEnabled = isAuthenticationEnabled(serverUrl, tokenUrl);
-  const shouldValidateCredentials =
-    isAuthEnabled && isMounted && areClientCredentialsProvided && seedToken === null;
-
-  const handleAuthSubmit = useCallback(async () => {
-    setIsValidatingCredentials(true);
-    setAuthErrorMessage(null);
-
-    try {
-      const validatedToken = await requestClientCredentialsToken({
-        tokenUrl,
-        clientId,
-        clientSecret,
-      });
-      // If successfull, store the credentials in session storage
-      setStoredSessionValue(CLIENT_ID_SESSION_KEY, clientId);
-      setStoredSessionValue(CLIENT_SECRET_SESSION_KEY, clientSecret);
-
-      setSeedToken(validatedToken);
-    } catch (caughtError: unknown) {
-      if (!(caughtError instanceof DOMException && caughtError.name === 'AbortError')) {
-        setAuthErrorMessage(
-          caughtError instanceof Error ? caughtError.message : 'Failed to validate credentials.',
-        );
-      }
-    } finally {
-      setIsValidatingCredentials(false);
-    }
-  }, [clientId, clientSecret, tokenUrl]);
+  console.log({ clientIdInput, clientSecretInput, validatedToken });
 
   // Authentication on load
   useEffect(() => {
-    // Load stored credentials from session storage on mount
-    const storedClientId = getStoredSessionValue(CLIENT_ID_SESSION_KEY);
-    const storedClientSecret = getStoredSessionValue(CLIENT_SECRET_SESSION_KEY);
-    setClientId(storedClientId);
-    setClientSecret(storedClientSecret);
-    setAreClientCredentialsProvided(areClientCredentialsProvided);
-    setIsMounted(true);
     if (isAuthEnabled) {
+      // Next.js requires getting store values on mount
+      const storedClientId = getStoredSessionValue(CLIENT_ID_SESSION_KEY);
+      const storedClientSecret = getStoredSessionValue(CLIENT_SECRET_SESSION_KEY);
+      const isStoredClientIdNonEmpty = isNonEmptyString(storedClientId);
+      const isStoredClientSecretNonEmpty = isNonEmptyString(storedClientSecret);
+
+      isStoredClientIdNonEmpty && setClientIdInput(storedClientId);
+      isStoredClientSecretNonEmpty && setClientSecretInput(storedClientSecret);
+
       const controller = new AbortController();
       (async () => {
-        if (shouldValidateCredentials) {
+        if (isStoredClientIdNonEmpty && isStoredClientSecretNonEmpty) {
           setIsValidatingCredentials(true);
 
           try {
-            const validatedToken = await requestClientCredentialsToken({
+            const validatedTokenResponse = await requestClientCredentialsToken({
               tokenUrl,
               clientId: storedClientId,
               clientSecret: storedClientSecret,
               signal: controller.signal,
             });
 
-            setSeedToken(validatedToken);
+            setValidatedToken(validatedTokenResponse);
           } catch (caughtError: unknown) {
             if (caughtError instanceof DOMException && caughtError.name === 'AbortError') {
               return;
             }
-            if (caughtError instanceof Error) {
-              setAuthErrorMessage(caughtError.message);
-            }
+            setAuthErrorMessage(
+              caughtError instanceof Error
+                ? caughtError.message
+                : 'Failed to validate credentials.',
+            );
 
             clearStoredCredentialsSession();
-            setClientId('');
-            setClientSecret('');
+            setClientIdInput('');
+            setClientSecretInput('');
           } finally {
             setIsValidatingCredentials(false);
           }
@@ -118,33 +94,58 @@ export default function AuthenticationGuard({
     }
   }, []);
 
-  if (!isAuthEnabled) {
-    return (
-      <AuthProvider tokenUrl="" clientId="" enabled={false}>
-        {children}
-      </AuthProvider>
-    );
-  }
+  const handleAuthSubmit = useCallback(async () => {
+    setIsValidatingCredentials(true);
+    setAuthErrorMessage(null);
 
+    try {
+      const validatedTokenResponse = await requestClientCredentialsToken({
+        tokenUrl,
+        clientId: clientIdInput,
+        clientSecret: clientSecretInput,
+      });
+      // If successfull, store the credentials in session storage
+      setStoredSessionValue(CLIENT_ID_SESSION_KEY, clientIdInput);
+      setStoredSessionValue(CLIENT_SECRET_SESSION_KEY, clientSecretInput);
+      setValidatedToken(validatedTokenResponse);
+    } catch (caughtError: unknown) {
+      setAuthErrorMessage(
+        caughtError instanceof Error ? caughtError.message : 'Failed to validate credentials.',
+      );
+    } finally {
+      setIsValidatingCredentials(false);
+    }
+  }, [clientIdInput, clientSecretInput, tokenUrl]);
+
+  // Page content based on authentication state
+  let content: JSX.Element | null = (
+    <AuthProvider
+      tokenUrl={tokenUrl}
+      clientId={clientIdInput}
+      clientSecret={clientSecretInput}
+      enabled={isAuthEnabled}
+      seedToken={validatedToken}
+    >
+      {children}
+    </AuthProvider>
+  );
   if (isValidatingCredentials) {
-    return <ValidationLoader />;
-  }
-
-  if (!areClientCredentialsProvided) {
+    content = <ValidationLoader />;
+  } else if (isAuthEnabled && !validatedToken) {
     const setupCredentialsMessage =
       process.env.CREDENTIALS_SETUP_MESSAGE ||
       'The credentials are used for authenticated catalog requests. If you do not have credentials, contact the administrator.';
-    return (
+    content = (
       <main className="grid flex-1 place-items-center p-4">
         <div className="w-full max-w-xl pb-[30vh]">
           <AuthenticationForm
             eyebrow="API authentication"
             title="Enter API credentials"
             description={`${setupCredentialsMessage} Credentials stay available for this browser tab until it is closed.`}
-            clientId={clientId}
-            clientSecret={clientSecret}
-            onClientIdChange={setClientId}
-            onClientSecretChange={setClientSecret}
+            clientId={clientIdInput}
+            clientSecret={clientSecretInput}
+            onClientIdChange={setClientIdInput}
+            onClientSecretChange={setClientSecretInput}
             onSubmit={handleAuthSubmit}
             submitText="Continue"
             errorMessage={authErrorMessage}
@@ -158,14 +159,9 @@ export default function AuthenticationGuard({
   }
 
   return (
-    <AuthProvider
-      tokenUrl={tokenUrl}
-      clientId={clientId}
-      clientSecret={clientSecret}
-      enabled
-      seedToken={seedToken}
-    >
-      {children}
-    </AuthProvider>
+    <>
+      <Navbar isAuthenticationEnabled={!!validatedToken} />
+      {content}
+    </>
   );
 }

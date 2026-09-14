@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import AuthenticationGuard from './_components/AuthenticationGuard';
-import Navbar from './_components/Navbar';
-import { isAuthenticationEnabled } from '@/lib/services/auth';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -23,7 +21,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const serverUrl = process.env.SERVER_URL;
   const tokenUrl = process.env.TOKEN_URL;
-  const isAuthEnabled = isAuthenticationEnabled(serverUrl, tokenUrl);
   return (
     <html
       lang="en"
@@ -32,7 +29,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">
-        <Navbar isAuthenticationEnabled={isAuthEnabled} />
         <AuthenticationGuard serverUrl={serverUrl} tokenUrl={tokenUrl}>
           {children}
         </AuthenticationGuard>
