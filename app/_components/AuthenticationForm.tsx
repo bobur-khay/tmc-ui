@@ -1,4 +1,6 @@
+import { useState, useEffect, type SubmitEventHandler } from 'react';
 import Button from './base/Button';
+import { isNonEmptyString } from '@/lib/utils/strings';
 
 interface CredentialsFormProps {
   readonly eyebrow: string;
@@ -68,11 +70,22 @@ export function AuthenticationForm({
   isSubmitting = false,
   size = 'md',
 }: CredentialsFormProps) {
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (event) => {
+  // Browser autofill on load doesn't trigger onChange() and the states are not updated. The user should manually click on the input fields to trigger autofill.
+  const [isAutofillBlocked, setIsAutofillBlocked] = useState(true);
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
     onSubmit();
   };
   const sizeStyles = SIZE_STYLES[size];
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (isAutofillBlocked) {
+        setIsAutofillBlocked(false);
+      }
+    }, 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <section className={`flex flex-col`}>
@@ -103,6 +116,7 @@ export function AuthenticationForm({
           <label className="block">
             <span className={`text-text-primary font-medium ${sizeStyles.label}`}>Client ID</span>
             <input
+              readOnly={isAutofillBlocked}
               autoFocus={autoFocusClientId}
               type="text"
               value={clientId}
@@ -119,6 +133,7 @@ export function AuthenticationForm({
               Client Secret
             </span>
             <input
+              readOnly={isAutofillBlocked}
               type="password"
               value={clientSecret}
               onChange={(event) => onClientSecretChange(event.target.value)}
@@ -134,9 +149,11 @@ export function AuthenticationForm({
         <Button
           text={isSubmitting ? 'Saving...' : submitText}
           type="submit"
+          autoComplete="off" // Otherwise Firefox causes hydration error
           className={`mt-3 w-min border`}
           variant="default"
           size={size}
+          disabled={isSubmitting || !isNonEmptyString(clientId) || !isNonEmptyString(clientSecret)}
         />
       </form>
     </section>

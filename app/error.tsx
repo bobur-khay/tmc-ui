@@ -1,5 +1,6 @@
 'use client';
-import { AppErrorUI } from './_components/AppError';
+
+import { AppErrorUI } from './_components/AppErrorUI';
 
 /**
  * Unhandled render errors land here

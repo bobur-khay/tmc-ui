@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   readonly flashDurationMs?: number;
+  readonly autoComplete?: 'on' | 'off';
   text?: string;
   children?: React.ReactNode;
   variant: 'none' | 'default';

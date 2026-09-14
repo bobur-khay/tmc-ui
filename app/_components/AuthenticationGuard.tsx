@@ -36,13 +36,12 @@ export default function AuthenticationGuard({
     null,
   );
 
-  //Authentication states
-  const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
-  const [isValidatingCredentials, setIsValidatingCredentials] = useState(false);
-
   // Authentication status
   const isAuthEnabled = isAuthenticationEnabled(serverUrl, tokenUrl);
-  console.log({ clientIdInput, clientSecretInput, validatedToken });
+
+  //Authentication states
+  const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
+  const [isValidatingCredentials, setIsValidatingCredentials] = useState(isAuthEnabled);
 
   // Authentication on load
   useEffect(() => {
@@ -69,11 +68,10 @@ export default function AuthenticationGuard({
               signal: controller.signal,
             });
 
+            if (controller.signal.aborted) return;
             setValidatedToken(validatedTokenResponse);
           } catch (caughtError: unknown) {
-            if (caughtError instanceof DOMException && caughtError.name === 'AbortError') {
-              return;
-            }
+            if (controller.signal.aborted) return;
             setAuthErrorMessage(
               caughtError instanceof Error
                 ? caughtError.message
@@ -84,14 +82,19 @@ export default function AuthenticationGuard({
             setClientIdInput('');
             setClientSecretInput('');
           } finally {
-            setIsValidatingCredentials(false);
+            if (!controller.signal.aborted) {
+              setIsValidatingCredentials(false);
+            }
           }
+        } else {
+          setIsValidatingCredentials(false);
         }
       })();
       return () => {
         controller.abort();
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAuthSubmit = useCallback(async () => {
@@ -129,33 +132,35 @@ export default function AuthenticationGuard({
       {children}
     </AuthProvider>
   );
-  if (isValidatingCredentials) {
-    content = <ValidationLoader />;
-  } else if (isAuthEnabled && !validatedToken) {
-    const setupCredentialsMessage =
-      process.env.CREDENTIALS_SETUP_MESSAGE ||
-      'The credentials are used for authenticated catalog requests. If you do not have credentials, contact the administrator.';
-    content = (
-      <main className="grid flex-1 place-items-center p-4">
-        <div className="w-full max-w-xl pb-[30vh]">
-          <AuthenticationForm
-            eyebrow="API authentication"
-            title="Enter API credentials"
-            description={`${setupCredentialsMessage} Credentials stay available for this browser tab until it is closed.`}
-            clientId={clientIdInput}
-            clientSecret={clientSecretInput}
-            onClientIdChange={setClientIdInput}
-            onClientSecretChange={setClientSecretInput}
-            onSubmit={handleAuthSubmit}
-            submitText="Continue"
-            errorMessage={authErrorMessage}
-            autoFocusClientId
-            isSubmitting={isValidatingCredentials}
-            size="lg"
-          />
-        </div>
-      </main>
-    );
+  if (isAuthEnabled) {
+    if (isValidatingCredentials) {
+      content = <ValidationLoader />;
+    } else if (!validatedToken) {
+      const setupCredentialsMessage =
+        process.env.CREDENTIALS_SETUP_MESSAGE ||
+        'The credentials are used for authenticated catalog requests. If you do not have credentials, contact the administrator.';
+      content = (
+        <main className="grid flex-1 place-items-center p-4">
+          <div className="w-full max-w-xl pb-[30vh]">
+            <AuthenticationForm
+              eyebrow="API authentication"
+              title="Enter API credentials"
+              description={`${setupCredentialsMessage} Credentials stay available for this browser tab until it is closed.`}
+              clientId={clientIdInput}
+              clientSecret={clientSecretInput}
+              onClientIdChange={setClientIdInput}
+              onClientSecretChange={setClientSecretInput}
+              onSubmit={handleAuthSubmit}
+              submitText="Continue"
+              errorMessage={authErrorMessage}
+              autoFocusClientId
+              isSubmitting={isValidatingCredentials}
+              size="lg"
+            />
+          </div>
+        </main>
+      );
+    }
   }
 
   return (

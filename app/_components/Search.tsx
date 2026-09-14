@@ -172,15 +172,15 @@ const Search: React.FC<SearchProps> = ({
           aria-label="Search inventory"
         />
         {loading ? (
-          <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2 text-text-secondary">
+          <div className="text-text-secondary pointer-events-none absolute inset-y-0 left-3 flex items-center gap-2">
             <span aria-hidden="true">
-              <ArrowPathIcon className="size-5 animate-spin text-text-secondary" />
+              <ArrowPathIcon className="text-text-secondary size-5 animate-spin" />
             </span>
             <span className="text-sm">Searching</span>
           </div>
         ) : (
           <MagnifyingGlassIcon
-            className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-text-secondary"
+            className="text-text-secondary pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2"
             aria-hidden="true"
           />
         )}
@@ -193,16 +193,16 @@ const Search: React.FC<SearchProps> = ({
               onSearch('');
               requestAnimationFrame(() => inputRef.current?.focus());
             }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-interactive-support hover:bg-interactive-support hover:text-text-primary"
+            className="text-interactive-support hover:bg-interactive-support hover:text-text-primary absolute top-1/2 right-2 -translate-y-1/2 rounded p-1"
           >
             <XMarkIcon className="size-5" aria-hidden="true" />
           </button>
         )}
       </div>
       {progressVisible && (
-        <div className="h-1.5 w-full overflow-hidden rounded-full border border-text-primary bg-surface-canvas">
+        <div className="border-text-primary bg-surface-canvas h-1.5 w-full overflow-hidden rounded-full border">
           <div
-            className="h-full rounded-full bg-status-success"
+            className="bg-status-success h-full rounded-full"
             style={{
               width: progressWidth,
               transition: loading ? 'width 9s linear' : 'width 150ms ease-out',
@@ -210,7 +210,7 @@ const Search: React.FC<SearchProps> = ({
           />
         </div>
       )}
-      <>{error && <div className="mt-2 h-5 text-sm text-status-error">{error}</div>}</>
+      <>{error && <div className="text-status-error mt-2 h-5 text-sm">{error}</div>}</>
     </>
   );
 };
