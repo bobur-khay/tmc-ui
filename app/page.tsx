@@ -1,95 +1,92 @@
-import { FilterProvider } from '@/lib/provider/FilterProvider';
+'use client';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { fetchApiDataInventory } from '@/lib/services/apiData';
 import { fetchLocalDataInventory } from '@/lib/services/localData';
-import { useState, useEffect } from 'react';
-import Layout from './layout';
+import { isNonEmptyString } from '@/lib/utils/strings';
+import { useCallback, useEffect, useState } from 'react';
 
-const PAGE_ONE = 1;
 const DEFAULT_PAGE_SIZE = 10;
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-export function Dashboard() {
-  const { authorizationHeader, enabled, error, isLoading } = useAuth();
-
+export default function Inventory() {
+  // Authentication data and state
+  const authData = useAuth();
+  // Inventory data and state
   const [inventory, setInventory] = useState<Item[]>([]);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
-  const [inventoryLoading, setInventoryLoading] = useState<boolean>(true);
-  const [totalItems, setTotalItems] = useState<number>(0);
+  const [isInventoryLoading, setIsInventoryLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0); // TODO: make sure can't be derived from inventory.length
+
+  const isServerAvailable = isNonEmptyString(process.env.SERVER_URL);
 
   if (isDevelopment) {
-    console.warn('Vite globals', {
-      authorizationHeader: authorizationHeader,
-      enabled: enabled,
-      error: error,
-      isLoading: isLoading,
-    });
+    console.warn('Authentication data:', authData);
   }
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const loadInventoryServer = useCallback(
+    async (page: number, pageSize: number, abortSignal?: AbortSignal) => {
+      const { data, meta } = await fetchApiDataInventory(
+        process.env.API_BASE,
+        {
+          signal: abortSignal,
+          authorizationHeader: authData.authorizationHeader,
+        },
+        page,
+        pageSize,
+      );
 
-    if (error) {
-      setInventoryLoading(false);
-      setInventoryError(error);
-      return () => controller.abort();
-    }
+      setInventory(data as Item[]);
+      setTotalItems(meta.page.totalElements);
+    },
+    [authData.authorizationHeader],
+  );
 
-    const loadInventory = async () => {
-      setInventoryLoading(true);
+  const loadInventoryClient = useCallback(async () => {
+    const response = await fetchLocalDataInventory();
+    const nexInventoryFiltered = response.filter((item) => item['schema:mpn'] !== '');
+    setInventory(nexInventoryFiltered);
+    setTotalItems(nexInventoryFiltered.length);
+  }, []);
+
+  const loadInventory = useCallback(
+    async (abortSignal?: AbortSignal) => {
+      setIsInventoryLoading(true);
       setInventoryError(null);
 
       try {
-        if (__SERVER_AVAILABLE__) {
-          if (enabled && !authorizationHeader) {
-            return;
-          }
-          const { data, meta } = await fetchApiDataInventory(
-            __API_BASE__,
-            {
-              signal: controller.signal,
-              authorizationHeader,
-            },
-            PAGE_ONE,
-            DEFAULT_PAGE_SIZE,
-          );
-
-          setInventory(data as Item[]);
-          setTotalItems(meta.page.totalElements);
-          return;
+        if (isServerAvailable) {
+          await loadInventoryServer(1, DEFAULT_PAGE_SIZE, abortSignal);
+        } else {
+          await loadInventoryClient();
         }
-
-        const response = await fetchLocalDataInventory(import.meta.env.BASE_URL);
-        const nexInventoryFiltered = response.filter((item) => item['schema:mpn'] !== '');
-        setInventory(nexInventoryFiltered);
-        setTotalItems(nexInventoryFiltered.length);
       } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
+        if (abortSignal?.aborted) {
           return;
         }
-
         if (err instanceof Response) {
           setInventoryError(err.statusText || 'Failed to find inventory');
           return;
         }
-
         setInventoryError(err instanceof Error ? err.message : 'Failed to find local inventory');
       } finally {
-        setInventoryLoading(false);
+        setIsInventoryLoading(false);
       }
-    };
+    },
+    [isServerAvailable, loadInventoryClient, loadInventoryServer],
+  );
 
-    void loadInventory();
-
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadInventory(controller.signal);
     return () => controller.abort();
-  }, [authorizationHeader, enabled, error, isLoading]);
+  }, [loadInventory]);
 
   return (
     <FilterProvider>
       <Layout
         loadedItems={inventory}
         inventoryError={inventoryError}
-        inventoryLoading={inventoryLoading}
+        inventoryLoading={isInventoryLoading}
         totalItems={totalItems}
       />
     </FilterProvider>

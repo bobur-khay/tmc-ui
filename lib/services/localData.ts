@@ -27,7 +27,11 @@ export async function fetchLocalDataFilters(baseUrl: string): Promise<{
   return { nextProtocols, nextManufacturers, nextAuthors, nextRepositories };
 }
 
-export async function fetchLocalDataInventory(baseUrl: string): Promise<Item[]> {
+export async function fetchLocalDataInventory(): Promise<Item[]> {
+  const baseUrl = process.env.API_BASE;
+  if (!baseUrl) {
+    throw new Error('Base url not set');
+  }
   const folder = ensureTrailingSlash(
     normalizeRelativePathSegment(REPOSITORY_CATALOG_DEFAULT_FOLDER),
   );

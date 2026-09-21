@@ -69,7 +69,7 @@ const Button: React.FC<ButtonProps> = ({
     : resolvedVariantStyle.default;
 
   const resolvedClassName: string = [
-    "relative inline-flex items-center gap-1 rounded-[2px] font-medium before:pointer-events-none before:absolute before:left-[-3px] before:top-[-3px] before:right-[-3px] before:bottom-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-visible:outline-none focus-visible:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60",
+    "relative cursor-pointer inline-flex items-center gap-1 rounded-[2px] font-medium before:pointer-events-none before:absolute before:left-[-3px] before:top-[-3px] before:right-[-3px] before:bottom-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-visible:outline-none focus-visible:before:opacity-100 disabled:cursor-not-allowed disabled:opacity-60",
     BUTTON_SIZE_STYLES[size],
     variantClassName,
     className ?? '',

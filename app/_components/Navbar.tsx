@@ -24,7 +24,7 @@ function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-const Navbar: React.FC<{ isAuthenticationEnabled: boolean }> = ({ isAuthenticationEnabled }) => {
+export function Navbar({ isAuthenticationEnabled }: { isAuthenticationEnabled: boolean }) {
   const pathname = usePathname();
 
   const toggleTheme = () => {
@@ -78,7 +78,7 @@ const Navbar: React.FC<{ isAuthenticationEnabled: boolean }> = ({ isAuthenticati
                         isActive
                           ? 'border-border-interactive-pressed text-text-primary bg-transparent'
                           : 'border-border-default text-text-secondary hover:bg-surface-panel-hover hover:text-text-primary',
-                        "before:border-focus-ring relative flex items-center justify-center border-b-[3px] px-4 py-1 text-sm font-medium before:pointer-events-none before:absolute before:inset-0 before:rounded-[2px] before:border before:opacity-0 before:content-[''] focus-visible:outline-none focus-visible:before:opacity-100",
+                        "before:border-focus-ring relative flex items-center justify-center border-b-[3px] px-4 py-1 text-sm font-medium before:pointer-events-none before:absolute before:inset-0 before:rounded-xs before:border before:opacity-0 before:content-[''] focus-visible:outline-none focus-visible:before:opacity-100",
                       )}
                     >
                       {item.name}
@@ -110,6 +110,4 @@ const Navbar: React.FC<{ isAuthenticationEnabled: boolean }> = ({ isAuthenticati
       </div>
     </Disclosure>
   );
-};
-
-export default Navbar;
+}

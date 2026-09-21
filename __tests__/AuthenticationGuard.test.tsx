@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import AuthenticationGuard from '../app/_components/AuthenticationGuard';
 import { requestClientCredentialsToken } from '../lib/services/auth';
-import { clearStoredCredentialsSession, getStoredSessionValue } from '../lib/utils/storage';
+import { clearStoredCredentialsSession, getProcessedSessionStoreValue } from '../lib/utils/storage';
 
 vi.mock('../lib/services/auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../lib/services/auth')>()),
@@ -45,7 +45,7 @@ function renderGuard(serverUrl = 'https://api.test') {
 
 beforeEach(() => {
   requestToken.mockReset();
-  vi.mocked(getStoredSessionValue).mockReturnValue('stored-credential');
+  vi.mocked(getProcessedSessionStoreValue).mockReturnValue('stored-credential');
 });
 
 describe('AuthenticationGuard on load', () => {
@@ -90,7 +90,7 @@ describe('AuthenticationGuard on load', () => {
   });
 
   test('shows the form when no credentials are stored', () => {
-    vi.mocked(getStoredSessionValue).mockReturnValue(null);
+    vi.mocked(getProcessedSessionStoreValue).mockReturnValue(null);
 
     renderGuard();
 

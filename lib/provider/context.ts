@@ -6,8 +6,8 @@ export interface AuthProviderProps {
   readonly children: ReactNode;
   readonly tokenUrl: string;
   readonly clientId: string;
-  readonly clientSecret?: string;
-  readonly enabled?: boolean;
+  readonly clientSecret: string;
+  readonly isAuthenticationEnabled: boolean;
   readonly seedToken?: RequestClientCredentialsTokenResult | null;
 }
 
@@ -17,8 +17,6 @@ export interface AuthContextType {
   readonly expiresAt: number | null;
   readonly isAuthenticated: boolean;
   readonly isExpired: boolean;
-  readonly isLoading: boolean;
-  readonly error: string | null;
   readonly requestToken: () => Promise<void>;
   readonly clearToken: () => void;
   readonly serverUrl: string | undefined;

@@ -1,22 +1,22 @@
 'use client';
 
 import { type JSX, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { AuthProvider } from '../../lib/provider/AuthProvider';
 import {
   isAuthenticationEnabled,
   requestClientCredentialsToken,
   type RequestClientCredentialsTokenResult,
 } from '../../lib/services/auth';
 import { CLIENT_ID_SESSION_KEY, CLIENT_SECRET_SESSION_KEY } from '../../lib/utils/constants';
-import { isNonEmptyString } from '../../lib/utils/strings';
 import {
   clearStoredCredentialsSession,
-  getStoredSessionValue,
+  getProcessedSessionStoreValue,
   setStoredSessionValue,
 } from '../../lib/utils/storage';
 import { ValidationLoader } from './ValidationLoader';
 import { AuthenticationForm } from './AuthenticationForm';
-import Navbar from './Navbar';
+import { Navbar } from './Navbar';
+import { useClientCredentialsToken } from '@/lib/hooks/useClientCredentialsToken';
+import { AuthContext } from '@/lib/provider/context';
 
 interface AuthenticationGuardProps {
   readonly children: ReactNode;
@@ -24,11 +24,16 @@ interface AuthenticationGuardProps {
   readonly tokenUrl?: string;
 }
 
+/**
+ * Authentication guard component that ensures the user is authenticated before rendering the children. Renders a form for entering credentials if needed.
+ */
 export default function AuthenticationGuard({
   children,
   serverUrl = '',
   tokenUrl = '',
 }: AuthenticationGuardProps) {
+  const isAuthEnabled = isAuthenticationEnabled(serverUrl, tokenUrl);
+
   // Credentials
   const [clientIdInput, setClientIdInput] = useState('');
   const [clientSecretInput, setClientSecretInput] = useState('');
@@ -36,30 +41,28 @@ export default function AuthenticationGuard({
     null,
   );
 
-  // Authentication status
-  const isAuthEnabled = isAuthenticationEnabled(serverUrl, tokenUrl);
-
   //Authentication states
   const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
   const [isValidatingCredentials, setIsValidatingCredentials] = useState(isAuthEnabled);
+
+  // Token validation state and management
+  const tokenState = useClientCredentialsToken({
+    tokenUrl,
+    clientId: clientIdInput,
+    clientSecret: clientSecretInput,
+    seedToken: validatedToken,
+  });
 
   // Authentication on load
   useEffect(() => {
     if (isAuthEnabled) {
       // Next.js requires getting store values on mount
-      const storedClientId = getStoredSessionValue(CLIENT_ID_SESSION_KEY);
-      const storedClientSecret = getStoredSessionValue(CLIENT_SECRET_SESSION_KEY);
-      const isStoredClientIdNonEmpty = isNonEmptyString(storedClientId);
-      const isStoredClientSecretNonEmpty = isNonEmptyString(storedClientSecret);
+      const storedClientId = getProcessedSessionStoreValue(CLIENT_ID_SESSION_KEY);
+      const storedClientSecret = getProcessedSessionStoreValue(CLIENT_SECRET_SESSION_KEY);
 
-      isStoredClientIdNonEmpty && setClientIdInput(storedClientId);
-      isStoredClientSecretNonEmpty && setClientSecretInput(storedClientSecret);
-
-      const controller = new AbortController();
-      (async () => {
-        if (isStoredClientIdNonEmpty && isStoredClientSecretNonEmpty) {
-          setIsValidatingCredentials(true);
-
+      if (storedClientId && storedClientSecret) {
+        const controller = new AbortController();
+        void (async () => {
           try {
             const validatedTokenResponse = await requestClientCredentialsToken({
               tokenUrl,
@@ -67,32 +70,26 @@ export default function AuthenticationGuard({
               clientSecret: storedClientSecret,
               signal: controller.signal,
             });
-
             if (controller.signal.aborted) return;
             setValidatedToken(validatedTokenResponse);
           } catch (caughtError: unknown) {
             if (controller.signal.aborted) return;
             setAuthErrorMessage(
-              caughtError instanceof Error
-                ? caughtError.message
-                : 'Failed to validate credentials.',
+              caughtError instanceof Error ? caughtError.message : 'Failed to validate credentials',
             );
 
             clearStoredCredentialsSession();
-            setClientIdInput('');
-            setClientSecretInput('');
           } finally {
-            if (!controller.signal.aborted) {
+            // Changing the validation state is faster than navigation, so we delay the update to avoid UI flicker.
+            setTimeout(() => {
               setIsValidatingCredentials(false);
-            }
+            }, 1000);
           }
-        } else {
-          setIsValidatingCredentials(false);
-        }
-      })();
-      return () => {
-        controller.abort();
-      };
+        })();
+        return () => {
+          controller.abort();
+        };
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -113,7 +110,7 @@ export default function AuthenticationGuard({
       setValidatedToken(validatedTokenResponse);
     } catch (caughtError: unknown) {
       setAuthErrorMessage(
-        caughtError instanceof Error ? caughtError.message : 'Failed to validate credentials.',
+        caughtError instanceof Error ? caughtError.message : 'Failed to validate credentials',
       );
     } finally {
       setIsValidatingCredentials(false);
@@ -122,18 +119,23 @@ export default function AuthenticationGuard({
 
   // Page content based on authentication state
   let content: JSX.Element | null = (
-    <AuthProvider
-      tokenUrl={tokenUrl}
-      clientId={clientIdInput}
-      clientSecret={clientSecretInput}
-      enabled={isAuthEnabled}
-      seedToken={validatedToken}
+    <AuthContext.Provider
+      value={{
+        accessToken: tokenState.accessToken,
+        authorizationHeader: tokenState.authorizationHeader,
+        expiresAt: tokenState.expiresAt,
+        isAuthenticated: Boolean(tokenState.accessToken) && !tokenState.isExpired,
+        isExpired: tokenState.isExpired,
+        requestToken: tokenState.requestToken,
+        clearToken: tokenState.clearToken,
+        serverUrl: process.env.API_BASE,
+      }}
     >
       {children}
-    </AuthProvider>
+    </AuthContext.Provider>
   );
   if (isAuthEnabled) {
-    if (isValidatingCredentials) {
+    if (isValidatingCredentials || tokenState.isLoading) {
       content = <ValidationLoader />;
     } else if (!validatedToken) {
       const setupCredentialsMessage =

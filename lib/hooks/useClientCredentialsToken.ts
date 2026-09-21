@@ -3,12 +3,12 @@ import {
   requestClientCredentialsToken,
   type RequestClientCredentialsTokenResult,
 } from '../services/auth';
+import { isNonEmptyString } from '../utils/strings';
 
 interface UseClientCredentialsTokenOptions {
   readonly tokenUrl: string;
   readonly clientId: string;
   readonly clientSecret: string;
-  readonly enabled?: boolean;
   readonly seedToken?: RequestClientCredentialsTokenResult | null;
 }
 
@@ -26,7 +26,14 @@ interface UseClientCredentialsTokenResult {
 export function useClientCredentialsToken(
   options: UseClientCredentialsTokenOptions,
 ): UseClientCredentialsTokenResult {
-  const { tokenUrl, clientId, clientSecret, enabled = false, seedToken = null } = options;
+  const { tokenUrl, clientId, clientSecret, seedToken } = options;
+
+  //TODO: finish this
+  const isTokenValidationEnabled =
+    isNonEmptyString(tokenUrl) &&
+    isNonEmptyString(clientId) &&
+    isNonEmptyString(clientSecret) &&
+    !!seedToken;
   const credentialsKey = `${tokenUrl}::${clientId}::${clientSecret}`;
 
   const [accessToken, setAccessToken] = useState<string | null>(seedToken?.accessToken ?? null);
@@ -37,28 +44,30 @@ export function useClientCredentialsToken(
   const credentialsKeyRef = useRef(credentialsKey);
 
   useEffect(() => {
-    credentialsKeyRef.current = credentialsKey;
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
-    setAccessToken(null);
-    setExpiresAt(null);
-    setError(null);
-    setIsLoading(false);
-
-    return () => {
+    if (isTokenValidationEnabled) {
+      credentialsKeyRef.current = credentialsKey;
       abortControllerRef.current?.abort();
-    };
-  }, [credentialsKey]);
+      abortControllerRef.current = null;
+      setAccessToken(null);
+      setExpiresAt(null);
+      setError(null);
+      setIsLoading(false);
+
+      return () => {
+        abortControllerRef.current?.abort();
+      };
+    }
+  }, [credentialsKey, isTokenValidationEnabled]);
 
   useEffect(() => {
-    if (!seedToken) {
+    if (!seedToken || !isTokenValidationEnabled) {
       return;
     }
 
     setAccessToken(seedToken.accessToken);
     setExpiresAt(seedToken.expiresAt);
     setError(null);
-  }, [seedToken]);
+  }, [isTokenValidationEnabled, seedToken]);
 
   const clearToken = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -123,7 +132,7 @@ export function useClientCredentialsToken(
   }, [clientId, clientSecret, credentialsKey, tokenUrl]);
 
   useEffect(() => {
-    if (!enabled) {
+    if (!isTokenValidationEnabled) {
       return;
     }
 
@@ -138,7 +147,7 @@ export function useClientCredentialsToken(
         return;
       }
     });
-  }, [enabled, requestToken, seedToken]);
+  }, [isTokenValidationEnabled, requestToken, seedToken]);
 
   useEffect(() => {
     return () => {
