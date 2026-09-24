@@ -16,7 +16,7 @@ import { ValidationLoader } from './ValidationLoader';
 import { AuthenticationForm } from './AuthenticationForm';
 import { Navbar } from './Navbar';
 import { useClientCredentialsToken } from '@/lib/hooks/useClientCredentialsToken';
-import { AuthContext } from '@/lib/provider/context';
+import { AuthContext } from '@/lib/context';
 
 interface AuthenticationGuardProps {
   readonly children: ReactNode;
@@ -89,6 +89,8 @@ export default function AuthenticationGuard({
         return () => {
           controller.abort();
         };
+      } else {
+        setIsValidatingCredentials(false);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

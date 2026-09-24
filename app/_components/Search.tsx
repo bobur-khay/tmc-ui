@@ -1,7 +1,7 @@
 import { ArrowPathIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import React, { useState, useEffect, useRef } from 'react';
 import Input from './base/Input';
-import { SEARCH_ENDPOINT } from '../utils/constants';
+import { SEARCH_ENDPOINT } from '@/lib/utils/constants';
 
 const DEBOUNCE_MS = 350;
 
@@ -11,9 +11,6 @@ interface SearchProps {
   onResultsChange: (items: Item[]) => void;
   baseItems: Item[];
   authorizationHeader?: string | null;
-  authEnabled: boolean;
-  authLoading: boolean;
-  authError?: string | null;
 }
 
 const DEFAULT_ERROR_MESSAGE = 'An error occurred during the search.';
@@ -24,9 +21,6 @@ const Search: React.FC<SearchProps> = ({
   onResultsChange,
   baseItems,
   authorizationHeader,
-  authEnabled,
-  authLoading,
-  authError,
 }) => {
   const [loading, setLoading] = useState(false);
   const [progressVisible, setProgressVisible] = useState(false);
@@ -87,18 +81,6 @@ const Search: React.FC<SearchProps> = ({
       return;
     }
 
-    if (authEnabled && authLoading && !authorizationHeader) {
-      setLoading(true);
-      return;
-    }
-
-    if (authEnabled && !authorizationHeader) {
-      setLoading(false);
-      setError(authError || DEFAULT_ERROR_MESSAGE);
-      onResultsChange([]);
-      return;
-    }
-
     setLoading(true);
     setError('');
 
@@ -112,7 +94,7 @@ const Search: React.FC<SearchProps> = ({
       const qs = encodeURIComponent(query.trim());
 
       try {
-        const res = await fetch(`${__API_BASE__}/${SEARCH_ENDPOINT}${qs}`, {
+        const res = await fetch(`${process.env.API_BASE}/${SEARCH_ENDPOINT}${qs}`, {
           signal: controller.signal,
           headers: authorizationHeader ? { Authorization: authorizationHeader } : undefined,
         });
@@ -156,7 +138,7 @@ const Search: React.FC<SearchProps> = ({
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
       abortRef.current?.abort();
     };
-  }, [authorizationHeader, authEnabled, authError, authLoading, baseItems, onResultsChange, query]);
+  }, [authorizationHeader, baseItems, onResultsChange, query]);
 
   return (
     <>

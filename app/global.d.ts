@@ -8,16 +8,6 @@ declare module '*.svg' {
   export default src;
 }
 
-declare const __API_BASE__: string | undefined;
-
-declare const __CATALOG_URL__: string; //TODO
-
-declare const __SERVER_AVAILABLE__: boolean;
-
-declare const __APP_REPO_URL__: string;
-
-declare const __CATALOG_REPO_URL__: string; //TODO
-
 interface ImportMetaEnv {
   readonly BASE_URL: string; //TODO
 }
@@ -71,16 +61,4 @@ type Item = {
   tmName?: string;
   name?: string;
   versions: Version[] | null;
-};
-
-type Filters = {
-  id: string;
-  name: string;
-  options: FilterData[];
-}[];
-
-type FilterData = {
-  value: string;
-  label: string;
-  checked: boolean;
 };

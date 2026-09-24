@@ -1,3 +1,5 @@
+import { type FilterData } from '@/app/_components/inventory/types';
+
 export const INVENTORY_ENDPOINT = 'inventory';
 
 export const THING_MODEL_ENDPOINT = 'thing-models/.latest';

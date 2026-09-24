@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { AuthContext } from '../provider/context';
+import { AuthContext } from '../context';
 
 /**
  * Gets the context from AuthContext which is set in AuthenticationGuard.tsx

@@ -1,21 +1,23 @@
 'use client';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { Inventory } from '@/app/_components/inventory/Inventory';
 import { fetchApiDataInventory } from '@/lib/services/apiData';
 import { fetchLocalDataInventory } from '@/lib/services/localData';
 import { isNonEmptyString } from '@/lib/utils/strings';
 import { useCallback, useEffect, useState } from 'react';
+import Loader from './_components/base/Loader';
+import { AppErrorUI } from './_components/AppErrorUI';
 
 const DEFAULT_PAGE_SIZE = 10;
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-export default function Inventory() {
+export default function InventoryLoad() {
   // Authentication data and state
   const authData = useAuth();
   // Inventory data and state
   const [inventory, setInventory] = useState<Item[]>([]);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [isInventoryLoading, setIsInventoryLoading] = useState(true);
-  const [totalItems, setTotalItems] = useState(0); // TODO: make sure can't be derived from inventory.length
 
   const isServerAvailable = isNonEmptyString(process.env.SERVER_URL);
 
@@ -25,7 +27,7 @@ export default function Inventory() {
 
   const loadInventoryServer = useCallback(
     async (page: number, pageSize: number, abortSignal?: AbortSignal) => {
-      const { data, meta } = await fetchApiDataInventory(
+      const { data } = await fetchApiDataInventory(
         process.env.API_BASE,
         {
           signal: abortSignal,
@@ -35,17 +37,21 @@ export default function Inventory() {
         pageSize,
       );
 
+      if ((data as Item[]).length === 0) {
+        throw new Error('The inventory is empty');
+      }
       setInventory(data as Item[]);
-      setTotalItems(meta.page.totalElements);
     },
     [authData.authorizationHeader],
   );
 
   const loadInventoryClient = useCallback(async () => {
     const response = await fetchLocalDataInventory();
-    const nexInventoryFiltered = response.filter((item) => item['schema:mpn'] !== '');
-    setInventory(nexInventoryFiltered);
-    setTotalItems(nexInventoryFiltered.length);
+    const filteredInventory = response.filter((item) => item['schema:mpn'] !== '');
+    if (filteredInventory.length === 0) {
+      throw new Error('The inventory is empty');
+    }
+    setInventory(filteredInventory);
   }, []);
 
   const loadInventory = useCallback(
@@ -81,14 +87,13 @@ export default function Inventory() {
     return () => controller.abort();
   }, [loadInventory]);
 
-  return (
-    <FilterProvider>
-      <Layout
-        loadedItems={inventory}
-        inventoryError={inventoryError}
-        inventoryLoading={isInventoryLoading}
-        totalItems={totalItems}
-      />
-    </FilterProvider>
-  );
+  if (isInventoryLoading) {
+    return <Loader text="Loading inventory..." />;
+  }
+
+  if (inventoryError) {
+    return <AppErrorUI title={"Couldn't load inventory"} description={inventoryError} />;
+  }
+
+  return <Inventory loadedItems={inventory} />;
 }

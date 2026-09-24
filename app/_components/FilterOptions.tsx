@@ -1,22 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Button from './base/Button';
 import Input from './base/Input';
-import { normalizeString } from '../utils/strings';
-import { OPTIONS_LIST_SIZE, SCROLL_THRESHOLD_PX } from '../utils/constants';
+import { type FilterData, type FilterKey } from './inventory/types';
+import { OPTIONS_LIST_SIZE, SCROLL_THRESHOLD_PX } from '@/lib/utils/constants';
+import { normalizeString } from '@/lib/utils/strings';
 
 interface FilterOptionsProps {
   sectionId: string;
-  options: readonly FilterData[];
-  onOptionChange: (sectionId: string, optionValue: string, checked: boolean) => void;
-  onAddProtocol?: (protocol: FilterData) => void;
+  options: readonly FilterData[] | { errorMessage: string };
+  onOptionChange: (filterKey: FilterKey, optionValue: string, checked: boolean) => void;
 }
 
-const FilterOptions: React.FC<FilterOptionsProps> = ({
-  sectionId,
-  options,
-  onOptionChange,
-  onAddProtocol,
-}) => {
+const FilterOptions: React.FC<FilterOptionsProps> = ({ sectionId, options, onOptionChange }) => {
   const shouldScroll = options.length > OPTIONS_LIST_SIZE;
   const scrollContainerBaseClassName = 'max-h-72 space-y-4 overflow-y-auto pr-[6px]';
   const scrollContainerFirefoxClassName =
@@ -109,7 +104,7 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({
                 onChange={(e) => onOptionChange(sectionId, option.value, e.target.checked)}
                 className="peer col-start-1 row-start-1 size-4 appearance-none rounded-[2px] focus-visible:outline-none disabled:cursor-not-allowed forced-colors:appearance-auto"
               />
-              <span className="pointer-events-none absolute left-[-2px] top-[-2px] h-5 w-5 rounded-[4px] border border-focus-ring opacity-0 peer-focus-visible:opacity-100" />
+              <span className="border-focus-ring pointer-events-none absolute top-[-2px] left-[-2px] h-5 w-5 rounded-[4px] border opacity-0 peer-focus-visible:opacity-100" />
               <svg
                 fill="none"
                 viewBox="0 0 16 16"
@@ -120,13 +115,13 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({
                   width="16"
                   height="16"
                   rx="2"
-                  className="fill-transparent stroke-text-primary group-hover:fill-surface-input-hover group-hover:stroke-interactive-hover group-has-[:checked]:fill-interactive-pressed group-has-[:disabled]:fill-media group-has-[:checked]:stroke-interactive-pressed group-has-[:disabled]:stroke-text-marker"
+                  className="stroke-text-primary group-hover:fill-surface-input-hover group-hover:stroke-interactive-hover group-has-[:checked]:fill-interactive-pressed group-has-[:disabled]:fill-media group-has-[:checked]:stroke-interactive-pressed group-has-[:disabled]:stroke-text-marker fill-transparent"
                 />
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
                   d="M7.01428 9.85976L11.7739 2.73831L13.4367 3.84965L7.32081 13.0004L2.7594 8.42398L4.17593 7.01209L7.01428 9.85976Z"
-                  className="fill-text-inverse-strong opacity-0 group-has-[:disabled]:fill-text-tertiary group-has-[:checked]:opacity-100"
+                  className="fill-text-inverse-strong group-has-[:disabled]:fill-text-tertiary opacity-0 group-has-[:checked]:opacity-100"
                 />
               </svg>
             </div>
@@ -134,15 +129,15 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({
 
           <label
             htmlFor={`filter-${sectionId}-${optionIdx}`}
-            className="text-sm text-text-primary hover:text-text-secondary"
+            className="text-text-primary hover:text-text-secondary text-sm"
           >
             {option.label}
           </label>
         </div>
       ))}
       {sectionId === 'protocol' && (
-        <div className="ml-7 mt-4">
-          <label htmlFor="custom-protocol" className="block text-sm text-text-secondary">
+        <div className="mt-4 ml-7">
+          <label htmlFor="custom-protocol" className="text-text-secondary block text-sm">
             Add new protocol filter with its URI Scheme
           </label>
 
@@ -168,13 +163,13 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({
               text="Add"
               onClick={handleAddProtocol}
               disabled={!onAddProtocol}
-              className="border pl-4 pr-4"
+              className="border pr-4 pl-4"
               variant="default"
             ></Button>
           </div>
 
           {customProtocolError && (
-            <p className="mt-2 text-sm text-status-error">{customProtocolError}</p>
+            <p className="text-status-error mt-2 text-sm">{customProtocolError}</p>
           )}
         </div>
       )}

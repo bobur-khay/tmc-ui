@@ -1,31 +1,9 @@
 import { ensureTrailingSlash, normalizeRelativePathSegment } from '../utils/strings';
-import {
-  REPOSITORY_CATALOG_DEFAULT_FOLDER,
-  INVENTORY_FILENAME,
-  AUTHORS_FILENAME,
-  MANUFACTURERS_FILENAME,
-  PROTOCOLS_FILENAME,
-} from '../utils/constants';
+import { REPOSITORY_CATALOG_DEFAULT_FOLDER, INVENTORY_FILENAME } from '../utils/constants';
 import { type ThingDescription } from 'wot-typescript-definitions';
+import { type FilterData } from '@/app/_components/inventory/types';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
-
-export async function fetchLocalDataFilters(baseUrl: string): Promise<{
-  nextProtocols: FilterData[];
-  nextManufacturers: FilterData[];
-  nextAuthors: FilterData[];
-  nextRepositories: FilterData[];
-}> {
-  const nextProtocols: FilterData[] = await fetchDataFromTxT(baseUrl, PROTOCOLS_FILENAME).catch(
-    () => [],
-  );
-  const nextManufacturers: FilterData[] = await fetchDataFromTxT(baseUrl, MANUFACTURERS_FILENAME);
-
-  const nextAuthors: FilterData[] = await fetchDataFromTxT(baseUrl, AUTHORS_FILENAME);
-  const nextRepositories: FilterData[] = [];
-
-  return { nextProtocols, nextManufacturers, nextAuthors, nextRepositories };
-}
 
 export async function fetchLocalDataInventory(): Promise<Item[]> {
   const baseUrl = process.env.API_BASE;
