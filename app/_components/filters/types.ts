@@ -6,7 +6,7 @@ export type FilterData = {
   value: string;
   checked: boolean;
 };
-export const initialFilters: Filters = {
+export const EMPTY_FILTERS: Filters = {
   author: [],
   manufacturer: [],
   protocol: [],
@@ -25,3 +25,8 @@ export interface FilterOptionsFetchFunctionParams {
   endpoint: string;
   transform?: (res: any) => string[];
 }
+
+export type ApplyFiltersParams = {
+  isInitialLoad?: boolean;
+  isReset?: boolean;
+};

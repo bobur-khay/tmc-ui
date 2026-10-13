@@ -1,6 +1,6 @@
 import React from 'react';
 import Loader from '../base/Loader';
-import Card from './Card';
+import { Card } from './Card';
 import Link from 'next/link';
 import type { Attachment, InventoryItem, Version } from './types';
 
@@ -39,7 +39,7 @@ const CARD_CLASS_NAME =
   "relative min-w-0 rounded-[4px] border border-border-default bg-surface-panel shadow-md before:pointer-events-none before:absolute before:bottom-[-3px] before:left-[-3px] before:right-[-3px] before:top-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-within:rounded-[4px] focus-within:border focus-within:border-border-default focus-within:bg-surface-panel focus-within:outline-none focus-within:before:opacity-100 hover:bg-surface-panel-hover hover:shadow-sm hover:outline-interactive-support-hover";
 
 export function InventoryResults({ items, loading }: { items: InventoryItem[]; loading: boolean }) {
-  if (loading) return <Loader text="Loading catalog..." />;
+  if (loading && items.length === 0) return <Loader text="Loading catalog..." />;
 
   const getLatestTmID = (versions: Version[]): string | undefined => {
     return versions.reduce<Version | undefined>((latest, current) => {
@@ -62,10 +62,11 @@ export function InventoryResults({ items, loading }: { items: InventoryItem[]; l
   };
 
   return (
-    <div className="w-full">
+    <div className={loading ? 'inventory-loading w-full' : 'w-full'} aria-busy={loading}>
       <ul
         role="list"
-        className="grid grid-cols-[repeat(auto-fit,minmax(min(18rem,100%),1fr))] gap-6"
+        inert={loading}
+        className="grid grid-cols-[repeat(auto-fit,minmax(min(26rem,100%),1fr))] gap-6"
       >
         {items.map((itemTM, i) => {
           const key = buildItemKey(itemTM, i);
@@ -80,7 +81,7 @@ export function InventoryResults({ items, loading }: { items: InventoryItem[]; l
                 href={`/details/${encodeURIComponent(getLatestTmID(itemTM.versions ?? []) ?? '')}`}
               >
                 <Card
-                  title={title}
+                  modelId={itemTM['schema:mpn']}
                   author={itemTM['schema:author']['schema:name']}
                   manufacturer={itemTM['schema:manufacturer']['schema:name']}
                   imageSrc={imageSrc}
@@ -98,10 +99,8 @@ export function InventoryResults({ items, loading }: { items: InventoryItem[]; l
                       <dd className="text-text-primary truncate text-right">
                         {itemTM.repo ?? '—'}
                       </dd>
-                      <dt className="text-text-tertiary font-medium">Model ID</dt>
-                      <dd className="text-text-primary truncate text-right">
-                        {itemTM['schema:mpn'] ?? '—'}
-                      </dd>
+                      <dt className="text-text-tertiary font-medium">TM Name</dt>
+                      <dd className="text-text-primary truncate text-right">{title ?? '—'}</dd>
                       {itemTM.links?.content && (
                         <>
                           <dt className="text-text-tertiary font-medium">Content</dt>

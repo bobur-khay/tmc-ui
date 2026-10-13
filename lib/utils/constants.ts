@@ -17,7 +17,8 @@ export const PROTOCOLS_FILTER = 'filter.protocol=';
 export const AUTHOR_FILTER = 'filter.author=';
 
 export const PROTOCOLS: FilterData[] = [
-  { value: 'http/https', checked: false },
+  { value: 'http', checked: false },
+  { value: 'https', checked: false },
   { value: 'modbus', checked: false },
   { value: 'modbus+tcp', checked: false },
   { value: 'mqtt', checked: false },

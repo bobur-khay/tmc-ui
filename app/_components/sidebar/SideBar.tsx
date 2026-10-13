@@ -1,30 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { MinusIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
-import FilterOptions from './FilterOptions';
+import { FilterOptions } from './FilterOptions';
 import Button from '../base/Button';
-import { type FilterKey, type Filters } from '../inventory/types';
 import { capitalize } from '@/lib/utils/strings';
 import Spinner from '../base/Spinner';
+import type { FilterKey, Filters } from '../filters/types';
 
 interface SideBarProps {
   filters: Filters;
   onFilterCheck: (filterKey: FilterKey, optionValue: string) => void;
   resetFilters: () => void;
   areAvailableFiltersLoading: boolean;
-  didFiltersChange: boolean;
-  applyFilters: () => void;
 }
 
-export function SideBar({
+export const SideBar = memo(function SideBar({
   filters,
   onFilterCheck,
   resetFilters,
   areAvailableFiltersLoading,
-  didFiltersChange,
-  applyFilters,
 }: SideBarProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,8 +46,11 @@ export function SideBar({
         <Button
           text="Reset filters"
           className="rounded px-2"
-          onClick={resetFilters}
-          variant="default"
+          onClick={() => {
+            formRef.current?.reset();
+            resetFilters();
+          }}
+          variant="plain"
         />
       </div>
 
@@ -60,13 +60,13 @@ export function SideBar({
         ) : (
           <div className="flex flex-col gap-x-8 gap-y-10">
             {/* Filters */}
-            <form className="lg:block">
+            <form ref={formRef} className="lg:block">
               {Object.entries(filters)
                 .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
                 .map(([key, options]) => (
-                  <Disclosure key={key} as="div" className="border-border-subtle border-b py-5">
+                  <Disclosure key={key} as="div" defaultOpen className="py-3">
                     <h3 className="flow-root">
-                      <DisclosureButton className="group bg-surface-canvas flex w-full items-center justify-between py-3 text-sm">
+                      <DisclosureButton className="group bg-surface-canvas hover:bg-surface-input-hover -ml-1 flex w-[calc(100%+8px)] cursor-pointer items-center justify-between px-1 py-2 text-sm">
                         <span className="text-text-secondary font-medium">{capitalize(key)}</span>
                         <span className="ml-6 flex items-center">
                           <PlusIcon
@@ -80,7 +80,7 @@ export function SideBar({
                         </span>
                       </DisclosureButton>
                     </h3>
-                    <DisclosurePanel className="bg-surface-canvas pt-3">
+                    <DisclosurePanel className="bg-surface-canvas pt-2">
                       <FilterOptions
                         sectionId={key as FilterKey}
                         options={options}
@@ -89,23 +89,15 @@ export function SideBar({
                     </DisclosurePanel>
                   </Disclosure>
                 ))}
-              <Button
-                text="Apply Filters"
-                className="mt-8 border pr-4 pl-4"
-                disabled={!didFiltersChange}
-                variant="default"
-                onClick={applyFilters}
-              />
             </form>
 
             {showScrollTop && (
-              <div className="fixed right-4 bottom-4 z-50">
+              <div className="fixed bottom-4 left-4 z-50">
                 <Button
                   type="button"
                   onClick={scrollToTop}
                   aria-label="Scroll to top"
                   className="border whitespace-nowrap"
-                  variant="default"
                 >
                   <span className="inline-flex items-center gap-2 p-2">
                     <ChevronUpIcon className="size-6" aria-hidden="true" />
@@ -119,4 +111,4 @@ export function SideBar({
       </section>
     </div>
   );
-}
+});

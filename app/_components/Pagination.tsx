@@ -30,8 +30,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
     return [1, page - 1, page, page + 1, totalPages];
   })();
 
-  const paginationButtonClassName =
-    'h-8 w-8 items-center justify-center gap-[10px] border-border-interactive text-interactive-primary hover:border-border-interactive-hover hover:bg-surface-input-hover hover:text-interactive-hover';
+  const paginationButtonClassName = 'h-8 w-8 p-0! items-center justify-center  [&>svg]:shrink-0';
 
   return (
     <nav aria-label="Pagination" className={className ?? 'mt-8 flex flex-col items-center gap-4'}>
@@ -43,7 +42,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
             disabled={page === 1}
             aria-label="Go to first page"
             className={paginationButtonClassName}
-            variant="default"
+            variant="plain"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -67,7 +66,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
           disabled={page === 1}
           aria-label="Go to previous page"
           className={paginationButtonClassName}
-          variant="default"
+          variant="plain"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -80,23 +79,19 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
             <path d="M13 6L14.4 7.4L9.9 12L14.4 16.6L13 18L7 12L13 6Z" fill="currentColor" />
           </svg>
         </Button>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {visiblePages.map((p, idx) => {
             const prev = visiblePages[idx - 1];
             const gap = prev && p - prev > 1;
             return (
               <React.Fragment key={p}>
-                {gap && <span className="px-2 text-text-primary">…</span>}
+                {gap && <span className="text-text-primary px-2">…</span>}
                 <Button
                   type="button"
                   onClick={() => goToPage(p)}
                   aria-current={p === page ? 'page' : undefined}
-                  className={
-                    p === page
-                      ? 'h-8 w-8 items-center justify-center gap-[10px] border-border-interactive-hover bg-interactive-hover text-text-inverse-strong hover:border-border-interactive-hover hover:bg-interactive-hover hover:text-text-inverse-strong'
-                      : paginationButtonClassName
-                  }
-                  variant="none"
+                  className={paginationButtonClassName}
+                  variant={p === page ? 'solid' : 'plain'}
                 >
                   {p}
                 </Button>
@@ -110,7 +105,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
           disabled={page === totalPages}
           aria-label="Next page"
           className={paginationButtonClassName}
-          variant="default"
+          variant="plain"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -130,7 +125,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, onPageChange,
             disabled={page === totalPages}
             aria-label="Go to last page"
             className={paginationButtonClassName}
-            variant="default"
+            variant="plain"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

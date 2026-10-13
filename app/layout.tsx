@@ -3,16 +3,17 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import AuthenticationGuard from './_components/auth/AuthenticationGuard';
 
+// Fonts
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
 });
-
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
 });
 
+// Metadata
 export const metadata: Metadata = {
   title: 'TMC UI',
   description: 'Open-source UI for TMs managed by a TMC instance',

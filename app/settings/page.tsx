@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/hooks/useAuth';
 import { AuthenticationForm } from '../_components/auth/AuthenticationForm';
+import {} from 'next/navigation';
 
 export default function Settings() {
   const { clientId, clientSecret, isAuthenticationEnabled, updateCredentials } = useAuth();
@@ -31,38 +32,40 @@ export default function Settings() {
     }
   };
 
+  useEffect(() => {
+    if (!isAuthenticationEnabled) {
+      router.push('/');
+    }
+  }, [isAuthenticationEnabled, router]);
+
   return (
     <main className="bg-surface-canvas flex-1 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-xl">
-        {isAuthenticationEnabled ? (
-          <AuthenticationForm
-            eyebrow="API authentication"
-            title="Update API credentials"
-            description="Credentials are stored for this browser tab until it is closed"
-            clientId={newClientId}
-            clientSecret={newClientSecret}
-            onClientIdChange={(value) => {
-              setNewClientId(value);
-              setSaveError(null);
-            }}
-            onClientSecretChange={(value) => {
-              setNewClientSecret(value);
-              setSaveError(null);
-            }}
-            onSubmit={handleSave}
-            onDiscard={() => {
-              setNewClientId(clientId);
-              setNewClientSecret(clientSecret);
-              setSaveError(null);
-            }}
-            submitText="Save credentials"
-            errorMessage={saveError}
-            isSubmitting={isSaving}
-            actionsDisabled={!hasChanges}
-          />
-        ) : (
-          <Navigate to="/" />
-        )}
+        <AuthenticationForm
+          eyebrow="API authentication"
+          title="Update API credentials"
+          description="Credentials are stored for this browser tab until it is closed"
+          clientId={newClientId}
+          clientSecret={newClientSecret}
+          onClientIdChange={(value) => {
+            setNewClientId(value);
+            setSaveError(null);
+          }}
+          onClientSecretChange={(value) => {
+            setNewClientSecret(value);
+            setSaveError(null);
+          }}
+          onSubmit={handleSave}
+          onDiscard={() => {
+            setNewClientId(clientId);
+            setNewClientSecret(clientSecret);
+            setSaveError(null);
+          }}
+          submitText="Save credentials"
+          errorMessage={saveError}
+          isSubmitting={isSaving}
+          actionsDisabled={!hasChanges}
+        />
       </div>
     </main>
   );

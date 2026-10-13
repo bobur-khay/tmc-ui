@@ -4,7 +4,7 @@ import type { DetailedInventoryItem, InventoryItem } from '@/app/_components/inv
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-export async function fetchLocalDataInventory(): Promise<InventoryItem[]> {
+export async function fetchLocalDataInventory(signal?: AbortSignal): Promise<InventoryItem[]> {
   const baseUrl = process.env.API_BASE;
   if (!baseUrl) {
     throw new Error('Base url not set');
@@ -17,7 +17,7 @@ export async function fetchLocalDataInventory(): Promise<InventoryItem[]> {
   const relativePath = `${normalizeRelativePathSegment(baseUrl)}${folder}${filename}`;
   const url = new URL(`/${normalizeRelativePathSegment(relativePath)}`, window.location.origin);
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { signal });
   if (!res.ok) {
     throw new Response('Failed to fetch local inventory', {
       status: res.status,

@@ -24,7 +24,7 @@ interface AuthenticationGuardProps {
 }
 
 /**
- * Authentication guard component that ensures the user is authenticated before rendering the children. Renders a form for entering credentials if needed.
+ * Authentication guard component that ensures the user is authenticated before rendering the children. Renders a form for entering credentials if not authenticated.
  */
 export default function AuthenticationGuard({
   children,

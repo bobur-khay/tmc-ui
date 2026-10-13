@@ -176,7 +176,7 @@ const OpenWithModal: React.FC<OpenWithModalProps> = ({ open, TM, onClose }) => {
               </DialogTitle>
             </div>
             <Button
-              variant="none"
+              variant="plain"
               size="sm"
               onClick={onClose}
               aria-label="Close open with"
@@ -210,7 +210,7 @@ const OpenWithModal: React.FC<OpenWithModalProps> = ({ open, TM, onClose }) => {
                     aria-label={`Open ${target.name} in a new tab`}
                     title={`Open ${target.name} in a new tab`}
                     className="shrink-0 justify-center gap-2 border"
-                    variant="default"
+                    variant="outlined"
                     size="sm"
                   >
                     {target.status === 'opening' ? (

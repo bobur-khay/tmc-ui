@@ -12,6 +12,45 @@ body {
   color: var(--color-text-primary);
 }
 
+.inventory-loading li > a {
+  opacity: 0.55;
+}
+
+html.light .inventory-loading {
+  --inventory-shimmer-color: rgb(0 0 0 / 8%);
+}
+
+.inventory-loading li::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    var(--inventory-shimmer-color, rgb(0 0 0 / 30%)) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: inventory-shimmer 1.4s linear infinite;
+}
+
+@keyframes inventory-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-loading li::after {
+    animation: none;
+  }
+}
+
 .theme-light-only {
   display: none;
 }

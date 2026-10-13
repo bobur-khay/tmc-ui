@@ -90,7 +90,7 @@ export function Navbar({ isAuthenticationEnabled }: { isAuthenticationEnabled: b
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
                 className="border pr-4 pl-4"
-                variant="default"
+                variant="outlined"
               >
                 <span className="inline-flex items-center gap-1.5">
                   <span className="theme-dark-only inline-flex items-center gap-1.5">

@@ -117,36 +117,35 @@ export function AuthenticationForm({
         ) : null}
 
         <div className={`flex flex-col ${sizeStyles.inputsGap}`}>
-          <label className="block">
-            <span className={`text-text-primary font-medium ${sizeStyles.label}`}>Client ID</span>
-            <input
-              readOnly={isAutofillBlocked}
-              autoFocus={autoFocusClientId}
-              type="text"
-              value={clientId}
-              onChange={(event) => onClientIdChange(event.target.value)}
-              className={`border-border-default bg-surface-input text-text-primary placeholder:text-text-secondary focus:outline-focus-soft w-full rounded-md border focus:outline-2 ${sizeStyles.input}`}
-              placeholder="Enter client ID"
-              aria-label="Client ID"
-              required
-            />
+          <label className={`text-text-primary font-medium ${sizeStyles.label}`}>
+            <span>Client ID</span>
+          </label>
+          <input
+            readOnly={isAutofillBlocked}
+            autoFocus={autoFocusClientId}
+            type="text"
+            value={clientId}
+            onChange={(event) => onClientIdChange(event.target.value)}
+            className={`border-border-default bg-surface-input text-text-primary placeholder:text-text-secondary focus:outline-focus-soft w-full rounded-md border focus:outline-2 ${sizeStyles.input}`}
+            placeholder="Enter client ID"
+            aria-label="Client ID"
+            required
+          />
+
+          <label className={`text-text-primary font-medium ${sizeStyles.label}`}>
+            Client Secret
           </label>
 
-          <label className="block">
-            <span className={`text-text-primary font-medium ${sizeStyles.label}`}>
-              Client Secret
-            </span>
-            <input
-              readOnly={isAutofillBlocked}
-              type="password"
-              value={clientSecret}
-              onChange={(event) => onClientSecretChange(event.target.value)}
-              className={`border-border-default bg-surface-input text-text-primary placeholder:text-text-secondary focus:outline-focus-soft w-full rounded-md border focus:outline-2 ${sizeStyles.input}`}
-              placeholder="Enter client secret"
-              aria-label="Client Secret"
-              required
-            />
-          </label>
+          <input
+            readOnly={isAutofillBlocked}
+            type="password"
+            value={clientSecret}
+            onChange={(event) => onClientSecretChange(event.target.value)}
+            className={`border-border-default bg-surface-input text-text-primary placeholder:text-text-secondary focus:outline-focus-soft w-full rounded-md border focus:outline-2 ${sizeStyles.input}`}
+            placeholder="Enter client secret"
+            aria-label="Client Secret"
+            required
+          />
         </div>
 
         <div className="mt-3 flex flex-wrap gap-3">
@@ -155,7 +154,7 @@ export function AuthenticationForm({
             type="submit"
             autoComplete="off" // Otherwise Firefox causes hydration error
             className="w-fit border"
-            variant="default"
+            variant="outlined"
             size={size}
             disabled={
               actionsDisabled ||
@@ -170,7 +169,7 @@ export function AuthenticationForm({
               type="button"
               autoComplete="off"
               className="border-border-default text-text-secondary hover:bg-surface-input-hover hover:text-text-primary w-fit border"
-              variant="none"
+              variant="plain"
               size={size}
               disabled={actionsDisabled || isSubmitting}
               onClick={onDiscard}

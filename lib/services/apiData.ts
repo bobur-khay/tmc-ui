@@ -172,9 +172,7 @@ export async function fetchTmContentFromServer(
       throw new Error("Coudn't fetch TM");
     }
     const { data: tmNameNAttachmentsArray } = await tmNameNAttachmentsRes.json();
-    console.log(tmNameNAttachmentsArray);
     const tmContent = await tmContentRes.json();
-    console.log(tmContent);
 
     if (!tmNameNAttachmentsArray || tmNameNAttachmentsArray.length === 0) return tmContent;
 

@@ -31,7 +31,7 @@ export default function ShareModal({ url, version, onClose }: ShareModalProps) {
               Share Thing Model
             </DialogTitle>
             <Button
-              variant="none"
+              variant="plain"
               size="sm"
               onClick={onClose}
               aria-label="Close share"
@@ -58,7 +58,7 @@ export default function ShareModal({ url, version, onClose }: ShareModalProps) {
               />
             </div>
             <Button
-              variant="default"
+              variant="outlined"
               size="sm"
               className="mt-2 gap-2 border"
               onClick={() => void copyLink()}

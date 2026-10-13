@@ -1,5 +1,4 @@
-import { capitalize } from '@/lib/utils/strings';
-import { type FilterData, type FilterKey } from '../inventory/types';
+import type { FilterKey, FilterData } from '../filters/types';
 
 interface FilterOptionsProps {
   sectionId: FilterKey;
@@ -7,13 +6,17 @@ interface FilterOptionsProps {
   onOptionChange: (filterKey: FilterKey, optionValue: string) => void;
 }
 
-const FilterOptions: React.FC<FilterOptionsProps> = ({ sectionId, options, onOptionChange }) => {
+export function FilterOptions({ sectionId, options, onOptionChange }: FilterOptionsProps) {
   if ('errorMessage' in options)
     return <div className="text-text-primary text-sm">{options.errorMessage}</div>;
 
+  const sortedOptions = [...options].sort(
+    (optionA, optionB) => Number(optionB.checked) - Number(optionA.checked),
+  );
+
   return (
-    <div aria-label={`${sectionId} options`} className="max-h-32 overflow-y-auto">
-      {options.map((option, optionIdx) => (
+    <div aria-label={`${sectionId} options`} className="max-h-40 overflow-y-scroll">
+      {sortedOptions.map((option, optionIdx) => (
         <div key={option.value} className="flex gap-3">
           <div className="flex h-5 shrink-0 items-center">
             <div className="group relative grid size-4 grid-cols-1">
@@ -24,7 +27,7 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({ sectionId, options, onOpt
                 checked={option.checked}
                 type="checkbox"
                 onChange={() => onOptionChange(sectionId, option.value)}
-                className="peer col-start-1 row-start-1 size-4 appearance-none rounded-xs focus-visible:outline-none disabled:cursor-not-allowed forced-colors:appearance-auto"
+                className="peer col-start-1 row-start-1 size-4 cursor-pointer appearance-none rounded-xs focus-visible:outline-none disabled:cursor-not-allowed forced-colors:appearance-auto"
               />
               <span className="border-focus-ring pointer-events-none absolute -top-0.5 -left-0.5 h-5 w-5 rounded-sm border opacity-0 peer-focus-visible:opacity-100" />
               <svg
@@ -51,14 +54,12 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({ sectionId, options, onOpt
 
           <label
             htmlFor={`filter-${sectionId}-${optionIdx}`}
-            className="text-text-primary hover:text-text-secondary text-sm"
+            className="text-text-primary hover:text-text-secondary cursor-pointer text-sm"
           >
-            {capitalize(option.value)}
+            {option.value}
           </label>
         </div>
       ))}
     </div>
   );
-};
-
-export default FilterOptions;
+}

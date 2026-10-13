@@ -53,7 +53,7 @@ export function TmJsonModal({ isOpen, setIsOpen, TM }: TmViewerProps) {
               Full Thing Model
             </DialogTitle>
             <Button
-              variant="default"
+              variant="outlined"
               size="sm"
               className="shrink-0 gap-2 border"
               onClick={() => setOpenWithOpen(true)}
@@ -62,7 +62,7 @@ export function TmJsonModal({ isOpen, setIsOpen, TM }: TmViewerProps) {
               Open with
             </Button>
             <Button
-              variant="default"
+              variant="outlined"
               size="sm"
               className="shrink-0 gap-2 border"
               onClick={() => void copyModel()}
@@ -75,7 +75,7 @@ export function TmJsonModal({ isOpen, setIsOpen, TM }: TmViewerProps) {
               Copy JSON
             </Button>
             <Button
-              variant="none"
+              variant="plain"
               size="sm"
               onClick={() => {
                 setOpenWithOpen(false);

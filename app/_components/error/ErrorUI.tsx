@@ -50,7 +50,7 @@ export function ErrorUI({
               onClick={buttonOnclick}
               text={buttonText}
               className="border pr-4 pl-4"
-              variant="default"
+              variant="outlined"
             />
           </div>
         )}
