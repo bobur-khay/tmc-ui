@@ -147,7 +147,7 @@ export async function fetchTmContentFromServer(
   options: FetchThingModelOptions = {},
 ): Promise<DetailedInventoryItem> {
   try {
-    const tmName = id.split('/').slice(0, 3).join('/');
+    const tmName = id.split('/').slice(0, -1).join('/');
 
     const getTmNameNAttachments = async () => {
       return await fetch(`${process.env.API_BASE}/${INVENTORY_ENDPOINT}/.tmName/${tmName}`, {

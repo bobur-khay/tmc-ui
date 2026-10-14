@@ -59,6 +59,7 @@ export default function Details() {
         }
         setTM(data);
       } catch (err) {
+        console.error(err);
         setError(err instanceof Error ? err.message : 'Failed to load item.');
       } finally {
         setLoading(false);

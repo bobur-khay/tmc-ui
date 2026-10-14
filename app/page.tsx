@@ -156,7 +156,7 @@ export default function InventoryLoad() {
         if (signal.aborted) {
           return;
         }
-        console.error(err);
+        console.error(err instanceof Response ? await err.text() : err);
         setInventoryError("That didn't work. Please try again.");
       } finally {
         if (!signal.aborted) setIsInventoryLoading(false);
@@ -165,8 +165,11 @@ export default function InventoryLoad() {
     [authorizationHeader, checkedFilterOptions, baseInventory, page, pageSize],
   );
 
-  const applyLatestFilters = useEffectEvent(() => {
-    void applyFilters({});
+  const applyLatestFilters = useEffectEvent((signal: AbortSignal) => {
+    void applyFilters({
+      isReset: !Object.keys(checkedFilterOptions).length,
+      signal,
+    });
   });
 
   useEffect(() => {
@@ -176,14 +179,16 @@ export default function InventoryLoad() {
       return;
     }
 
-    let timeout;
-    if (!Object.keys(checkedFilterOptions).length) {
-      void applyFilters({ isReset: true });
-    } else {
-      window.setTimeout(applyLatestFilters, FILTER_DEBOUNCE_MS);
-    }
-    return () => timeout && window.clearTimeout(timeout);
-  }, [checkedFilterOptions, areAvailableFiltersLoading, applyFilters]);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(
+      () => applyLatestFilters(controller.signal),
+      Object.keys(checkedFilterOptions).length ? FILTER_DEBOUNCE_MS : 0,
+    );
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [checkedFilterOptions, areAvailableFiltersLoading]);
 
   // Load the inventory and the available filters on mount
   useEffect(() => {

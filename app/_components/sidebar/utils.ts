@@ -123,8 +123,9 @@ async function getFilterOptionsResults(
           }));
         }
       } catch (err) {
+        console.error(err instanceof Error ? err.message : err);
         filterOptionResults[typedKey] = {
-          errorMessage: err instanceof Error ? err.message : 'Unknown error',
+          errorMessage: 'Could not fetch the filters. Refresh the page to try again.',
         };
       }
     }),
@@ -149,7 +150,7 @@ export async function fetchAvailableFilterOptionsServer({
       signal,
     });
     if (!apiResponse.ok) {
-      throw new Error(`${endpoint}: HTTP ${apiResponse.status}`);
+      throw new Error(await apiResponse.text());
     }
     const result = transform ? transform(await apiResponse.json()) : await apiResponse.json();
     return result;
