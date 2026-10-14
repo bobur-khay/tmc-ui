@@ -4,21 +4,18 @@ import { MinusIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
 import { FilterOptions } from './FilterOptions';
 import Button from '../base/Button';
 import { capitalize } from '@/lib/utils/strings';
-import Spinner from '../base/Spinner';
 import type { FilterKey, Filters } from '../filters/types';
 
 interface SideBarProps {
   filters: Filters;
   onFilterCheck: (filterKey: FilterKey, optionValue: string) => void;
   resetFilters: () => void;
-  areAvailableFiltersLoading: boolean;
 }
 
 export const SideBar = memo(function SideBar({
   filters,
   onFilterCheck,
   resetFilters,
-  areAvailableFiltersLoading,
 }: SideBarProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -55,59 +52,55 @@ export const SideBar = memo(function SideBar({
       </div>
 
       <section aria-labelledby="products-heading" className="pb-15">
-        {areAvailableFiltersLoading ? (
-          <Spinner className="mt-8 h-10" />
-        ) : (
-          <div className="flex flex-col gap-x-8 gap-y-10">
-            {/* Filters */}
-            <form ref={formRef} className="lg:block">
-              {Object.entries(filters)
-                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-                .map(([key, options]) => (
-                  <Disclosure key={key} as="div" defaultOpen className="py-3">
-                    <h3 className="flow-root">
-                      <DisclosureButton className="group bg-surface-canvas hover:bg-surface-input-hover -ml-1 flex w-[calc(100%+8px)] cursor-pointer items-center justify-between px-1 py-2 text-sm">
-                        <span className="text-text-secondary font-medium">{capitalize(key)}</span>
-                        <span className="ml-6 flex items-center">
-                          <PlusIcon
-                            aria-hidden="true"
-                            className="text-icon-brand group-hover:text-interactive-hover size-5 group-data-open:hidden"
-                          />
-                          <MinusIcon
-                            aria-hidden="true"
-                            className="text-icon-brand group-hover:text-interactive-hover hidden size-5 group-data-open:block"
-                          />
-                        </span>
-                      </DisclosureButton>
-                    </h3>
-                    <DisclosurePanel className="bg-surface-canvas pt-2">
-                      <FilterOptions
-                        sectionId={key as FilterKey}
-                        options={options}
-                        onOptionChange={onFilterCheck}
-                      />
-                    </DisclosurePanel>
-                  </Disclosure>
-                ))}
-            </form>
+        <div className="flex flex-col gap-x-8 gap-y-10">
+          {/* Filters */}
+          <form ref={formRef} className="lg:block">
+            {Object.entries(filters)
+              .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+              .map(([key, options]) => (
+                <Disclosure key={key} as="div" defaultOpen className="py-3">
+                  <h3 className="flow-root">
+                    <DisclosureButton className="group bg-surface-canvas hover:bg-surface-input-hover -ml-1 flex w-[calc(100%+8px)] cursor-pointer items-center justify-between px-1 py-2 text-sm">
+                      <span className="text-text-secondary font-medium">{capitalize(key)}</span>
+                      <span className="ml-6 flex items-center">
+                        <PlusIcon
+                          aria-hidden="true"
+                          className="text-icon-brand group-hover:text-interactive-hover size-5 group-data-open:hidden"
+                        />
+                        <MinusIcon
+                          aria-hidden="true"
+                          className="text-icon-brand group-hover:text-interactive-hover hidden size-5 group-data-open:block"
+                        />
+                      </span>
+                    </DisclosureButton>
+                  </h3>
+                  <DisclosurePanel className="bg-surface-canvas pt-2">
+                    <FilterOptions
+                      sectionId={key as FilterKey}
+                      options={options}
+                      onOptionChange={onFilterCheck}
+                    />
+                  </DisclosurePanel>
+                </Disclosure>
+              ))}
+          </form>
 
-            {showScrollTop && (
-              <div className="fixed bottom-4 left-4 z-50">
-                <Button
-                  type="button"
-                  onClick={scrollToTop}
-                  aria-label="Scroll to top"
-                  className="border whitespace-nowrap"
-                >
-                  <span className="inline-flex items-center gap-2 p-2">
-                    <ChevronUpIcon className="size-6" aria-hidden="true" />
-                    <span>Back to top</span>
-                  </span>
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+          {showScrollTop && (
+            <div className="fixed bottom-4 left-4 z-50">
+              <Button
+                type="button"
+                onClick={scrollToTop}
+                aria-label="Scroll to top"
+                className="border whitespace-nowrap"
+              >
+                <span className="inline-flex items-center gap-2 p-2">
+                  <ChevronUpIcon className="size-6" aria-hidden="true" />
+                  <span>Back to top</span>
+                </span>
+              </Button>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

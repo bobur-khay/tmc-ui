@@ -31,12 +31,14 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const FILTER_DEBOUNCE_MS = 800;
 
 // TODO: check if signals are actually necessary
+// TODO: Implement proper error message display in the app
 export default function InventoryLoad() {
   const { authorizationHeader } = useAuth();
 
   // Inventory
   const [baseInventory, setBaseInventory] = useState<InventoryItem[]>([]);
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
+  const [isSearchResults, setIsSearchResults] = useState(false);
   const [isInventoryLoading, setIsInventoryLoading] = useState(true);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -65,8 +67,12 @@ export default function InventoryLoad() {
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(baseInventory.length / pageSize)),
-    [pageSize, baseInventory],
+    () =>
+      Math.max(
+        1,
+        Math.ceil((isSearchResults ? filteredInventory.length : baseInventory.length) / pageSize),
+      ),
+    [pageSize, baseInventory, filteredInventory, isSearchResults],
   );
 
   // Filters
@@ -167,6 +173,7 @@ export default function InventoryLoad() {
           }
         }
         if (signal.aborted) return;
+        setIsSearchResults(false);
         setPage(1);
         if (isInitialLoad) {
           setBaseInventory(nextFilteredInventory);
@@ -260,11 +267,11 @@ export default function InventoryLoad() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // TODO: when changed while search results are shown, the result gets reset
   const handlePageChangeServer = useCallback(
     async (newPage: number) => {
       if (!process.env.TMC_SERVER_URL) return;
       setPage(newPage);
+      if (isSearchResults) return;
 
       const controller = new AbortController();
 
@@ -286,7 +293,7 @@ export default function InventoryLoad() {
         setInventoryError('Could not fetch inventory data');
       }
     },
-    [authorizationHeader, checkedFilterOptions, pageSize],
+    [authorizationHeader, checkedFilterOptions, pageSize, isSearchResults],
   );
 
   // Pagination
@@ -301,7 +308,7 @@ export default function InventoryLoad() {
         console.warn('Could not save the page size preference', error);
       }
 
-      if (!process.env.TMC_SERVER_URL) return;
+      if (!process.env.TMC_SERVER_URL || isSearchResults) return;
 
       const controller = new AbortController();
 
@@ -323,18 +330,22 @@ export default function InventoryLoad() {
         console.error(err);
       }
     },
-    [authorizationHeader, checkedFilterOptions],
+    [authorizationHeader, checkedFilterOptions, isSearchResults],
   );
 
   const onSearchResponse = useCallback(
     (results: InventoryItem[], query: string) => {
-      setFilteredInventory(results);
+      const hasQuery = query.trim().length > 0;
+      setIsSearchResults(hasQuery);
+      setFilteredInventory(
+        !hasQuery && process.env.TMC_SERVER_URL ? results.slice(0, pageSize) : results,
+      );
       setPage(1);
       if (results.length === 0) {
         setInventoryError(`No results found for "${query}"`);
       }
     },
-    [setFilteredInventory, setInventoryError, setPage],
+    [pageSize, setFilteredInventory, setInventoryError, setPage],
   );
 
   const paginatedItems = useMemo<InventoryItem[]>(() => {
@@ -363,19 +374,15 @@ export default function InventoryLoad() {
           <div className="max-w-screen-3xl flex flex-col gap-12 px-4 sm:px-6 lg:flex-row lg:px-8">
             {/* Sidebar */}
             <aside className="w-full rounded-lg lg:w-1/4 lg:max-w-72" aria-label="Filters">
-              <SideBar
-                filters={filters}
-                onFilterCheck={toggleFilter}
-                resetFilters={resetFilters}
-                areAvailableFiltersLoading={areAvailableFiltersLoading}
-              />
+              <SideBar filters={filters} onFilterCheck={toggleFilter} resetFilters={resetFilters} />
             </aside>
 
             {/* Results */}
             {inventoryError ? (
               <ErrorUI
                 title={
-                  inventoryError === 'No items match these filters'
+                  inventoryError === 'No items match these filters' ||
+                  inventoryError.startsWith('No results found for "')
                     ? 'Nothing found'
                     : "Couldn't load inventory"
                 }
@@ -447,7 +454,7 @@ export default function InventoryLoad() {
                     {areAvailableFiltersLoading && <Loader text="Loading catalog..." />}
                     {!areAvailableFiltersLoading && (
                       <InventoryResults
-                        items={filteredInventory}
+                        items={isSearchResults ? paginatedItems : filteredInventory}
                         loading={isInventoryLoading}
                         view={view}
                       />

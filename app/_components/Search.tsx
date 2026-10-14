@@ -136,6 +136,8 @@ export function Search({ onSearchResponse, baseInventory, setError }: SearchProp
               aria-label="Clear search"
               onClick={() => {
                 setQuery('');
+                onSearchResponse(baseInventory, '');
+                setError('');
                 requestAnimationFrame(() => inputRef.current?.focus());
               }}
               className="text-interactive-support hover:bg-interactive-support hover:text-text-primary absolute top-1/2 right-2 -translate-y-1/2 rounded p-1"
