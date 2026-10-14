@@ -39,7 +39,7 @@ export default function Details() {
   const [isTmJsonOpen, setTmJsonOpen] = useState(false);
 
   const navigateBack = () => {
-    router.back();
+    router.push('/');
   };
 
   // Load Thing Model
