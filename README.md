@@ -2,6 +2,26 @@
 
 - env variables change requires server restart
 
+## Next.js API proxy configuration
+
+Set `TMC_SERVER_URL` in the root `.env` file to the backend's HTTP(S) base URL.
+`VITE_SERVER_URL` is supported as a legacy fallback.
+
+- With a backend configured, `yarn dev` sets `API_BASE` to `/__tmc_api__`.
+  Next.js rewrites `/__tmc_api__/:path*` to the backend URL plus the requested
+  path, keeping browser API requests on the UI origin.
+- Production builds use the backend URL directly. The backend must allow
+  browser requests from the UI origin through CORS.
+- Without a backend URL, no API rewrite is registered and `API_BASE` is `/`
+  for local catalog files served from `public/`.
+- `IS_STATIC` enables static export and disables the development proxy;
+  static hosting cannot run Next.js rewrites.
+
+`LOCAL` does not control the Next.js proxy. Restart the development server after
+changing environment variables, and rebuild production deployments because
+these values are embedded at build time. The deployment instructions below
+still describe the legacy Vite workflow.
+
 # TMC User Interface
 
 TMC UI is an open-source web interface for browsing Thing Models (TMs) managed by a [Thing Model Catalog (TMC)](https://github.com/wot-oss/tmc). It supports read-only catalog operations; it is not a browser replacement for the TMC CLI.

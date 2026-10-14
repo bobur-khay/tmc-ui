@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const TMC_SERVER_URL = process.env.TMC_SERVER_URL ?? process.env.VITE_SERVER_URL;
+const useApiProxy =
+  process.env.NODE_ENV === 'development' && !!TMC_SERVER_URL && !process.env.IS_STATIC;
 
 const nextConfig: NextConfig = {
   /*
@@ -21,16 +23,18 @@ const nextConfig: NextConfig = {
     API_HOST: process.env.API_HOST ?? process.env.VITE_API_HOST,
     API_PORT: process.env.API_PORT ?? process.env.VITE_API_PORT,
     API_PROTOCOL: process.env.API_PROTOCOL ?? process.env.VITE_API_PROTOCOL,
-    API_BASE: process.env.NODE_ENV === 'development' ? '/__tmc_api__' : TMC_SERVER_URL,
+    API_BASE: useApiProxy ? '/__tmc_api__' : TMC_SERVER_URL || '/',
   },
 
   async rewrites() {
-    return [
-      {
-        source: '/__tmc_api__/:path*',
-        destination: `${TMC_SERVER_URL}/:path*`,
-      },
-    ];
+    return useApiProxy
+      ? [
+          {
+            source: '/__tmc_api__/:path*',
+            destination: `${TMC_SERVER_URL.replace(/\/+$/, '')}/:path*`,
+          },
+        ]
+      : [];
   },
 };
 
