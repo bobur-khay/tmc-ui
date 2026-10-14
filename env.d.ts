@@ -10,14 +10,13 @@ declare namespace NodeJS {
     readonly EDITDOR_URL?: string;
     readonly LOCAL?: 'true' | 'false';
     readonly PLAYGROUND_URL?: string;
-    readonly SERVER_URL?: string;
+    readonly TMC_SERVER_URL?: string;
     readonly TOKEN_URL?: string;
     readonly API_HOST?: string;
     readonly API_PORT?: string;
     readonly API_PROTOCOL?: string;
     readonly EDITDOR_URL?: string;
     readonly PLAYGROUND_URL?: string;
-    readonly SERVER_URL?: string;
     readonly CREDENTIALS_SETUP_MESSAGE?: string;
     readonly TOKEN_URL?: string;
   }

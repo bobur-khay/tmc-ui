@@ -18,7 +18,7 @@ export const buildItemImageSrc = (
 
   const pngImageSrc: Attachment | undefined = attachments.find((att) => att.name.endsWith('png'));
 
-  if (!process.env.SERVER_URL) {
+  if (!process.env.TMC_SERVER_URL) {
     if (!tmName || !pngImageSrc) return DEFAULT_IMAGE_SRC;
 
     return `${tmName}/.attachments/${pngImageSrc?.name}`;

@@ -96,7 +96,7 @@ export default function InventoryLoad() {
       setIsInventoryLoading(true);
       try {
         let nextFilteredInventory: InventoryItem[];
-        if (process.env.SERVER_URL) {
+        if (process.env.TMC_SERVER_URL) {
           //Server Filtering
           const { data } = await fetchApiDataInventory(
             process.env.API_BASE,
@@ -186,7 +186,7 @@ export default function InventoryLoad() {
       setAreAvailableFiltersLoading(true);
       let filterOptionResults: Filters;
 
-      if (process.env.SERVER_URL) {
+      if (process.env.TMC_SERVER_URL) {
         filterOptionResults = await getAvailableFilterOptionsServer(
           authorizationHeader ?? '',
           controller.signal,
@@ -212,7 +212,7 @@ export default function InventoryLoad() {
   // TODO: when changed while search results are shown, the result gets reset
   const handlePageChangeServer = useCallback(
     async (newPage: number) => {
-      if (!process.env.SERVER_URL) return;
+      if (!process.env.TMC_SERVER_URL) return;
       setPage(newPage);
 
       const controller = new AbortController();
@@ -244,7 +244,7 @@ export default function InventoryLoad() {
       setPageSize(newPageSize);
       setPage(1);
 
-      if (!process.env.SERVER_URL) return;
+      if (!process.env.TMC_SERVER_URL) return;
 
       const controller = new AbortController();
 
@@ -294,7 +294,7 @@ export default function InventoryLoad() {
             className="mb-10 flex justify-center gap-4 px-4 sm:px-6 md:flex-row md:items-center"
           >
             <div className="w-full md:w-3/4 lg:w-3/5">
-              {process.env.SERVER_URL && (
+              {process.env.TMC_SERVER_URL && (
                 <Search
                   onSearchResponse={onSearchResponse}
                   baseInventory={baseInventory}
@@ -355,7 +355,7 @@ export default function InventoryLoad() {
                   </label>
                 </div>
 
-                {process.env.SERVER_URL ? (
+                {process.env.TMC_SERVER_URL ? (
                   <div>
                     {areAvailableFiltersLoading && <Loader text="Loading catalog..." />}
                     {!areAvailableFiltersLoading && (

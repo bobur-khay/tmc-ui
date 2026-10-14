@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const serverUrl = process.env.SERVER_URL;
+  const serverUrl = process.env.TMC_SERVER_URL;
   const tokenUrl = process.env.TOKEN_URL;
   return (
     <html

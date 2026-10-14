@@ -49,7 +49,7 @@ export default function Details() {
       try {
         let data: DetailedInventoryItem | null = null;
 
-        if (process.env.SERVER_URL) {
+        if (process.env.TMC_SERVER_URL) {
           data = await fetchTmContentFromServer(id, {
             authorizationHeader,
           });
