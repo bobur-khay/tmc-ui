@@ -1,7 +1,7 @@
 import { createContext } from 'react';
 import type { ReactNode } from 'react';
 import type { RequestClientCredentialsTokenResult } from './services/auth';
-import { type FilterData } from '@/app/_components/inventory/types';
+import type { FilterData } from '@/app/_components/filters/types';
 
 export interface AuthProviderProps {
   readonly children: ReactNode;

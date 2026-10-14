@@ -3,6 +3,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import Input from './base/Input';
 import { SEARCH_ENDPOINT } from '@/lib/utils/constants';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { type InventoryItem } from './inventory/types';
 
 interface SearchProps {
   onSearchResponse: (items: InventoryItem[], query: string) => void;

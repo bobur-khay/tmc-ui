@@ -2,8 +2,7 @@ import type { NextConfig } from 'next';
 
 const TMC_SERVER_URL = process.env.TMC_SERVER_URL ?? process.env.VITE_SERVER_URL;
 const useApiProxy =
-  process.env.NODE_ENV === 'development' && !!TMC_SERVER_URL && !process.env.IS_STATIC;
-
+  process.env.NODE_ENV === 'development' && !!TMC_SERVER_URL && process.env.IS_STATIC !== 'true';
 const nextConfig: NextConfig = {
   /*
   IMPORTANT:
@@ -11,7 +10,7 @@ const nextConfig: NextConfig = {
 
   Some vars have been renamed and backwards compatibility is provided
   */
-  output: process.env.IS_STATIC ? 'export' : undefined,
+  output: process.env.IS_STATIC === 'true' ? 'export' : undefined,
   env: {
     TMC_SERVER_URL,
     IS_STATIC: process.env.IS_STATIC,
