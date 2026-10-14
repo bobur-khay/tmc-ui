@@ -106,10 +106,21 @@ async function getFilterOptionsResults(
             errorMessage: `No filter data available`,
           };
         } else {
-          // Distinct filter values
-          filterOptionResults[typedKey] = [...new Set(apiResponse.map((s) => s.toLowerCase()))].map(
-            (value) => ({ value, checked: false }),
-          );
+          const distinctValues = new Map<string, string>();
+          for (const value of apiResponse) {
+            const normalizedValue = value.toLowerCase();
+            const existingValue = distinctValues.get(normalizedValue);
+            if (
+              existingValue === undefined ||
+              (existingValue === existingValue.toLowerCase() && value !== normalizedValue)
+            ) {
+              distinctValues.set(normalizedValue, value);
+            }
+          }
+          filterOptionResults[typedKey] = [...distinctValues.values()].map((value) => ({
+            value,
+            checked: false,
+          }));
         }
       } catch (err) {
         filterOptionResults[typedKey] = {

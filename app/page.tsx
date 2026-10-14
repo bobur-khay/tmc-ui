@@ -96,44 +96,46 @@ export default function InventoryLoad() {
       setIsInventoryLoading(true);
       try {
         let nextFilteredInventory: InventoryItem[];
-        if (process.env.TMC_SERVER_URL) {
-          //Server Filtering
-          const { data } = await fetchApiDataInventory(
-            process.env.API_BASE,
-            {
-              signal,
-              authorizationHeader,
-              filters: isReset ? undefined : checkedFilterOptions,
-            },
-            page,
-            isInitialLoad ? undefined : pageSize,
-          );
-          nextFilteredInventory = data as InventoryItem[];
+        if (isReset) {
+          nextFilteredInventory = baseInventory;
         } else {
-          // Client Filtering
-          if (isInitialLoad) {
-            const response = await fetchLocalDataInventory(signal);
-            const filteredInventory = response.filter((item) => item['schema:mpn'] !== '');
-            nextFilteredInventory = filteredInventory;
-          } else if (isReset) {
-            nextFilteredInventory = baseInventory;
+          if (process.env.TMC_SERVER_URL) {
+            //Server Filtering
+            const { data } = await fetchApiDataInventory(
+              process.env.API_BASE,
+              {
+                signal,
+                authorizationHeader,
+                filters: checkedFilterOptions,
+              },
+              isInitialLoad ? undefined : page,
+              isInitialLoad ? undefined : pageSize,
+            );
+            nextFilteredInventory = data as InventoryItem[];
           } else {
-            nextFilteredInventory = baseInventory.filter((item) => {
-              const matchesCatalog =
-                !checkedFilterOptions.repository?.length ||
-                checkedFilterOptions.repository?.includes(item.repo);
-              const matchesManufacturer =
-                !checkedFilterOptions.manufacturer?.length ||
-                checkedFilterOptions.manufacturer?.includes(
-                  item['schema:manufacturer']?.['schema:name'],
-                );
-              const matchesAuthor =
-                !checkedFilterOptions.author?.length ||
-                checkedFilterOptions.author?.some((author) =>
-                  item.name?.toLowerCase().includes(author.toLowerCase()),
-                );
-              return matchesCatalog && matchesManufacturer && matchesAuthor;
-            });
+            // Client Filtering
+            if (isInitialLoad) {
+              const response = await fetchLocalDataInventory(signal);
+              const filteredInventory = response.filter((item) => item['schema:mpn'] !== '');
+              nextFilteredInventory = filteredInventory;
+            } else {
+              nextFilteredInventory = baseInventory.filter((item) => {
+                const matchesCatalog =
+                  !checkedFilterOptions.repository?.length ||
+                  checkedFilterOptions.repository?.includes(item.repo);
+                const matchesManufacturer =
+                  !checkedFilterOptions.manufacturer?.length ||
+                  checkedFilterOptions.manufacturer?.includes(
+                    item['schema:manufacturer']?.['schema:name'],
+                  );
+                const matchesAuthor =
+                  !checkedFilterOptions.author?.length ||
+                  checkedFilterOptions.author?.some((author) =>
+                    item.name?.toLowerCase().includes(author.toLowerCase()),
+                  );
+                return matchesCatalog && matchesManufacturer && matchesAuthor;
+              });
+            }
           }
         }
         if (signal.aborted) return;
@@ -174,9 +176,14 @@ export default function InventoryLoad() {
       return;
     }
 
-    const timeout = window.setTimeout(applyLatestFilters, FILTER_DEBOUNCE_MS);
-    return () => window.clearTimeout(timeout);
-  }, [checkedFilterOptions, areAvailableFiltersLoading]);
+    let timeout;
+    if (!Object.keys(checkedFilterOptions).length) {
+      void applyFilters({ isReset: true });
+    } else {
+      window.setTimeout(applyLatestFilters, FILTER_DEBOUNCE_MS);
+    }
+    return () => timeout && window.clearTimeout(timeout);
+  }, [checkedFilterOptions, areAvailableFiltersLoading, applyFilters]);
 
   // Load the inventory and the available filters on mount
   useEffect(() => {
