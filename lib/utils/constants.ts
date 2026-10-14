@@ -28,6 +28,10 @@ export const PROTOCOLS: FilterData[] = [
 
 export const THEME_KEY = 'tmc-ui-theme';
 
+export const INVENTORY_VIEW_KEY = 'tmc-ui-inventory-view';
+
+export const INVENTORY_PAGE_SIZE_KEY = 'tmc-ui-inventory-page-size';
+
 export const OPTIONS_LIST_SIZE = 10;
 
 export const SCROLL_THRESHOLD_PX = 64;

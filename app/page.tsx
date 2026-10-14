@@ -23,8 +23,11 @@ import {
 } from './_components/sidebar/utils';
 import { ErrorUI } from './_components/error/ErrorUI';
 import { type InventoryItem } from './_components/inventory/types';
+import { INVENTORY_PAGE_SIZE_KEY, INVENTORY_VIEW_KEY } from '@/lib/utils/constants';
+import { getLocalStorage, setLocalStorage } from '@/lib/utils/storage';
 
 const DEFAULT_PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const FILTER_DEBOUNCE_MS = 800;
 
 // TODO: check if signals are actually necessary
@@ -37,6 +40,26 @@ export default function InventoryLoad() {
   const [isInventoryLoading, setIsInventoryLoading] = useState(true);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'list'>('grid');
+
+  useEffect(() => {
+    try {
+      const storedView = getLocalStorage(INVENTORY_VIEW_KEY);
+      if (storedView === 'grid' || storedView === 'list') {
+        setView(storedView);
+      }
+    } catch (error) {
+      console.warn('Could not restore the results view preference', error);
+    }
+  }, []);
+
+  const handleViewChange = (nextView: 'grid' | 'list') => {
+    setView(nextView);
+    try {
+      setLocalStorage(nextView, INVENTORY_VIEW_KEY);
+    } catch (error) {
+      console.warn('Could not save the results view preference', error);
+    }
+  };
 
   // Pagination
   const [page, setPage] = useState<number>(1);
@@ -88,10 +111,12 @@ export default function InventoryLoad() {
   const applyFilters = useCallback(
     async ({
       isInitialLoad,
+      initialPageSize = pageSize,
       isReset,
       signal = new AbortController().signal,
     }: {
       isInitialLoad?: boolean;
+      initialPageSize?: number;
       isReset?: boolean;
       signal?: AbortSignal;
     }) => {
@@ -145,7 +170,7 @@ export default function InventoryLoad() {
         setPage(1);
         if (isInitialLoad) {
           setBaseInventory(nextFilteredInventory);
-          setFilteredInventory(nextFilteredInventory.slice(0, pageSize));
+          setFilteredInventory(nextFilteredInventory.slice(0, initialPageSize));
         } else {
           setFilteredInventory(nextFilteredInventory);
         }
@@ -196,6 +221,17 @@ export default function InventoryLoad() {
   // Load the inventory and the available filters on mount
   useEffect(() => {
     const controller = new AbortController();
+    let initialPageSize = DEFAULT_PAGE_SIZE;
+
+    try {
+      const storedPageSize = Number(getLocalStorage(INVENTORY_PAGE_SIZE_KEY));
+      if (PAGE_SIZE_OPTIONS.includes(storedPageSize)) {
+        initialPageSize = storedPageSize;
+        setPageSize(storedPageSize);
+      }
+    } catch (error) {
+      console.warn('Could not restore the page size preference', error);
+    }
 
     async function loadFilters() {
       setAreAvailableFiltersLoading(true);
@@ -216,7 +252,7 @@ export default function InventoryLoad() {
       setAreAvailableFiltersLoading(false);
     }
 
-    void applyFilters({ isInitialLoad: true, signal: controller.signal });
+    void applyFilters({ isInitialLoad: true, initialPageSize, signal: controller.signal });
     void loadFilters().catch((err: unknown) => {
       if (!controller.signal.aborted) console.error(err);
     });
@@ -258,6 +294,12 @@ export default function InventoryLoad() {
     async (newPageSize: number) => {
       setPageSize(newPageSize);
       setPage(1);
+
+      try {
+        setLocalStorage(String(newPageSize), INVENTORY_PAGE_SIZE_KEY);
+      } catch (error) {
+        console.warn('Could not save the page size preference', error);
+      }
 
       if (!process.env.TMC_SERVER_URL) return;
 
@@ -361,7 +403,7 @@ export default function InventoryLoad() {
                         onChange={async (value) => {
                           await handlePageSizeChangeServer(Number(value));
                         }}
-                        options={[10, 20, 50, 100].map((n) => ({
+                        options={PAGE_SIZE_OPTIONS.map((n) => ({
                           key: String(n),
                           value: String(n),
                         }))}
@@ -380,7 +422,7 @@ export default function InventoryLoad() {
                         title="Grid view"
                         aria-pressed={view === 'grid'}
                         variant={view === 'grid' ? 'solid' : 'plain'}
-                        onClick={() => setView('grid')}
+                        onClick={() => handleViewChange('grid')}
                         className="size-6 justify-center p-0!"
                       >
                         <Squares2X2Icon className="size-5" aria-hidden="true" />
@@ -391,7 +433,7 @@ export default function InventoryLoad() {
                         title="List view"
                         aria-pressed={view === 'list'}
                         variant={view === 'list' ? 'solid' : 'plain'}
-                        onClick={() => setView('list')}
+                        onClick={() => handleViewChange('list')}
                         className="size-6 justify-center p-0!"
                       >
                         <ListBulletIcon className="size-5" aria-hidden="true" />
