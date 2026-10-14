@@ -1,6 +1,8 @@
 'use client';
 import Loader from './_components/base/Loader';
 import Dropdown from './_components/base/Dropdown';
+import Button from './_components/base/Button';
+import { Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
 import InventoryResults from './_components/inventory/InventoryResults';
 import Pagination from './_components/Pagination';
 import { Search } from './_components/Search';
@@ -22,7 +24,7 @@ import {
 import { ErrorUI } from './_components/error/ErrorUI';
 import { type InventoryItem } from './_components/inventory/types';
 
-const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 20;
 const FILTER_DEBOUNCE_MS = 800;
 
 // TODO: check if signals are actually necessary
@@ -34,6 +36,7 @@ export default function InventoryLoad() {
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [isInventoryLoading, setIsInventoryLoading] = useState(true);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
+  const [view, setView] = useState<'grid' | 'list'>('grid');
 
   // Pagination
   const [page, setPage] = useState<number>(1);
@@ -348,30 +351,64 @@ export default function InventoryLoad() {
                     {filteredInventory.length !== 1 ? 's' : ''} from {baseInventory.length}
                   </p>
 
-                  <label className="text-text-primary flex items-center gap-2 text-sm">
-                    TMs per page:
-                    <Dropdown
-                      id="page-size"
-                      label="TMs per page"
-                      value={String(pageSize)}
-                      onChange={async (value) => {
-                        await handlePageSizeChangeServer(Number(value));
-                      }}
-                      options={[10, 20, 50, 100].map((n) => ({
-                        key: String(n),
-                        value: String(n),
-                      }))}
-                      showChevron={true}
-                      className="bg-surface-canvas rounded px-2 py-1 pr-10 text-sm"
-                    />
-                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="text-text-primary flex items-center gap-2 text-sm">
+                      TMs per page:
+                      <Dropdown
+                        id="page-size"
+                        label="TMs per page"
+                        value={String(pageSize)}
+                        onChange={async (value) => {
+                          await handlePageSizeChangeServer(Number(value));
+                        }}
+                        options={[10, 20, 50, 100].map((n) => ({
+                          key: String(n),
+                          value: String(n),
+                        }))}
+                        showChevron={true}
+                        className="bg-surface-canvas rounded px-2 py-1 text-sm"
+                      />
+                    </label>
+                    <div
+                      role="group"
+                      aria-label="Results view"
+                      className="border-border-default flex shrink-0 gap-0.5 rounded border p-0.5"
+                    >
+                      <Button
+                        type="button"
+                        aria-label="Grid view"
+                        title="Grid view"
+                        aria-pressed={view === 'grid'}
+                        variant={view === 'grid' ? 'solid' : 'plain'}
+                        onClick={() => setView('grid')}
+                        className="size-6 justify-center p-0!"
+                      >
+                        <Squares2X2Icon className="size-5" aria-hidden="true" />
+                      </Button>
+                      <Button
+                        type="button"
+                        aria-label="List view"
+                        title="List view"
+                        aria-pressed={view === 'list'}
+                        variant={view === 'list' ? 'solid' : 'plain'}
+                        onClick={() => setView('list')}
+                        className="size-6 justify-center p-0!"
+                      >
+                        <ListBulletIcon className="size-5" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 {process.env.TMC_SERVER_URL ? (
                   <div>
                     {areAvailableFiltersLoading && <Loader text="Loading catalog..." />}
                     {!areAvailableFiltersLoading && (
-                      <InventoryResults items={filteredInventory} loading={isInventoryLoading} />
+                      <InventoryResults
+                        items={filteredInventory}
+                        loading={isInventoryLoading}
+                        view={view}
+                      />
                     )}
 
                     <Pagination
@@ -384,7 +421,11 @@ export default function InventoryLoad() {
                   <div>
                     {areAvailableFiltersLoading && <Loader text="Loading catalog..." />}
                     {!areAvailableFiltersLoading && (
-                      <InventoryResults items={paginatedItems} loading={isInventoryLoading} />
+                      <InventoryResults
+                        items={paginatedItems}
+                        loading={isInventoryLoading}
+                        view={view}
+                      />
                     )}
 
                     <Pagination

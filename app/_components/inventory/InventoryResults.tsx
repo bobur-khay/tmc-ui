@@ -38,7 +38,15 @@ export const buildItemImageSrc = (
 const CARD_CLASS_NAME =
   "relative min-w-0 rounded-[4px] border border-border-default bg-surface-panel shadow-md before:pointer-events-none before:absolute before:bottom-[-3px] before:left-[-3px] before:right-[-3px] before:top-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-within:rounded-[4px] focus-within:border focus-within:border-border-default focus-within:bg-surface-panel focus-within:outline-none focus-within:before:opacity-100 hover:bg-surface-panel-hover hover:shadow-sm hover:outline-interactive-support-hover";
 
-export function InventoryResults({ items, loading }: { items: InventoryItem[]; loading: boolean }) {
+export function InventoryResults({
+  items,
+  loading,
+  view = 'grid',
+}: {
+  items: InventoryItem[];
+  loading: boolean;
+  view?: 'grid' | 'list';
+}) {
   if (loading && items.length === 0) return <Loader text="Loading catalog..." />;
 
   const getLatestTmID = (versions: Version[]): string | undefined => {
@@ -66,7 +74,11 @@ export function InventoryResults({ items, loading }: { items: InventoryItem[]; l
       <ul
         role="list"
         inert={loading}
-        className="grid grid-cols-[repeat(auto-fit,minmax(min(26rem,100%),1fr))] gap-6"
+        className={
+          view === 'list'
+            ? 'grid grid-cols-1 gap-3'
+            : 'grid grid-cols-[repeat(auto-fit,minmax(min(26rem,100%),1fr))] gap-6'
+        }
       >
         {items.map((itemTM, i) => {
           const key = buildItemKey(itemTM, i);
@@ -81,6 +93,7 @@ export function InventoryResults({ items, loading }: { items: InventoryItem[]; l
                 href={`/details/${encodeURIComponent(getLatestTmID(itemTM.versions ?? []) ?? '')}`}
               >
                 <Card
+                  view={view}
                   modelId={itemTM['schema:mpn']}
                   author={itemTM['schema:author']['schema:name']}
                   manufacturer={itemTM['schema:manufacturer']['schema:name']}
@@ -88,7 +101,13 @@ export function InventoryResults({ items, loading }: { items: InventoryItem[]; l
                   imageAlt={`Product image of ${title}`}
                   imageFallbackSrc={DEFAULT_IMAGE_SRC}
                 >
-                  <div className="border-border-subtle mt-5 flex flex-1 flex-col border-t pt-4">
+                  <div
+                    className={
+                      view === 'list'
+                        ? 'border-border-subtle mt-4 flex min-w-0 flex-1 flex-col border-t pt-4 md:mt-0 md:border-t-0 md:border-l md:pt-0 md:pl-5'
+                        : 'border-border-subtle mt-5 flex flex-1 flex-col border-t pt-4'
+                    }
+                  >
                     {itemTM['schema:description'] && (
                       <p className="text-text-secondary mb-4 line-clamp-2 text-sm leading-5">
                         {itemTM['schema:description']}
@@ -96,15 +115,35 @@ export function InventoryResults({ items, loading }: { items: InventoryItem[]; l
                     )}
                     <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
                       <dt className="text-text-tertiary font-medium">Repository</dt>
-                      <dd className="text-text-primary truncate text-right">
+                      <dd
+                        className={
+                          view === 'list'
+                            ? 'text-text-primary min-w-0 wrap-anywhere'
+                            : 'text-text-primary truncate text-right'
+                        }
+                      >
                         {itemTM.repo ?? '—'}
                       </dd>
                       <dt className="text-text-tertiary font-medium">TM Name</dt>
-                      <dd className="text-text-primary truncate text-right">{title ?? '—'}</dd>
+                      <dd
+                        className={
+                          view === 'list'
+                            ? 'text-text-primary min-w-0 wrap-anywhere'
+                            : 'text-text-primary truncate text-right'
+                        }
+                      >
+                        {title ?? '—'}
+                      </dd>
                       {itemTM.links?.content && (
                         <>
                           <dt className="text-text-tertiary font-medium">Content</dt>
-                          <dd className="text-text-primary truncate text-right">
+                          <dd
+                            className={
+                              view === 'list'
+                                ? 'text-text-primary min-w-0 wrap-anywhere'
+                                : 'text-text-primary truncate text-right'
+                            }
+                          >
                             {itemTM.links.content}
                           </dd>
                         </>

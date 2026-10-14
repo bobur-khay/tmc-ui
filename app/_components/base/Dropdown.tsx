@@ -54,7 +54,7 @@ const Dropdown: React.FC<IDropdownProps> = (props) => {
     "relative before:pointer-events-none before:absolute before:left-[-3px] before:top-[-3px] before:right-[-3px] before:bottom-[-3px] before:rounded-[4px] before:border before:border-focus-ring before:opacity-0 before:content-[''] focus-visible:outline-none focus-visible:before:opacity-100 hover:rounded-[2px]  hover:bg-surface-input-hover",
     'text-icon-brand text-sm font-normal not-italic',
     props.className,
-    props.showChevron ? 'pr-12' : '',
+    props.showChevron ? 'pr-8' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -78,7 +78,7 @@ const Dropdown: React.FC<IDropdownProps> = (props) => {
         <span className="block truncate text-left">{selectedOption?.value ?? ''}</span>
       </button>
       {props.showChevron ? (
-        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center">
+        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
