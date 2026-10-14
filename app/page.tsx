@@ -139,11 +139,7 @@ export default function InventoryLoad() {
         if (signal.aborted) return;
         setPage(1);
         if (isInitialLoad) {
-          setBaseInventory([
-            ...nextFilteredInventory,
-            ...nextFilteredInventory,
-            ...nextFilteredInventory,
-          ]);
+          setBaseInventory(nextFilteredInventory);
           setFilteredInventory(nextFilteredInventory.slice(0, pageSize));
         } else {
           setFilteredInventory(nextFilteredInventory);
