@@ -38,6 +38,8 @@ export default function InventoryLoad() {
   // Inventory
   const [baseInventory, setBaseInventory] = useState<InventoryItem[]>([]);
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
+  const [totalInventoryCount, setTotalInventoryCount] = useState(0);
+  const [matchingInventoryCount, setMatchingInventoryCount] = useState(0);
   const [isSearchResults, setIsSearchResults] = useState(false);
   const [isInventoryLoading, setIsInventoryLoading] = useState(true);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
@@ -130,12 +132,14 @@ export default function InventoryLoad() {
       setIsInventoryLoading(true);
       try {
         let nextFilteredInventory: InventoryItem[];
+        let nextMatchingInventoryCount: number | undefined;
         if (isReset) {
           nextFilteredInventory = baseInventory;
+          nextMatchingInventoryCount = totalInventoryCount;
         } else {
           if (process.env.TMC_SERVER_URL) {
             //Server Filtering
-            const { data } = await fetchApiDataInventory(
+            const { data, meta } = await fetchApiDataInventory(
               process.env.API_BASE,
               {
                 signal,
@@ -146,6 +150,7 @@ export default function InventoryLoad() {
               isInitialLoad ? undefined : pageSize,
             );
             nextFilteredInventory = data as InventoryItem[];
+            nextMatchingInventoryCount = meta.page.totalElements;
           } else {
             // Client Filtering
             if (isInitialLoad) {
@@ -173,9 +178,12 @@ export default function InventoryLoad() {
           }
         }
         if (signal.aborted) return;
+        const nextCount = nextMatchingInventoryCount ?? nextFilteredInventory.length;
+        setMatchingInventoryCount(nextCount);
         setIsSearchResults(false);
         setPage(1);
         if (isInitialLoad) {
+          setTotalInventoryCount(nextCount);
           setBaseInventory(nextFilteredInventory);
           setFilteredInventory(nextFilteredInventory.slice(0, initialPageSize));
         } else {
@@ -197,7 +205,7 @@ export default function InventoryLoad() {
         if (!signal.aborted) setIsInventoryLoading(false);
       }
     },
-    [authorizationHeader, checkedFilterOptions, baseInventory, page, pageSize],
+    [authorizationHeader, checkedFilterOptions, baseInventory, page, pageSize, totalInventoryCount],
   );
 
   const applyLatestFilters = useEffectEvent((signal: AbortSignal) => {
@@ -337,6 +345,7 @@ export default function InventoryLoad() {
     (results: InventoryItem[], query: string) => {
       const hasQuery = query.trim().length > 0;
       setIsSearchResults(hasQuery);
+      setMatchingInventoryCount(hasQuery ? results.length : totalInventoryCount);
       setFilteredInventory(
         !hasQuery && process.env.TMC_SERVER_URL ? results.slice(0, pageSize) : results,
       );
@@ -345,7 +354,7 @@ export default function InventoryLoad() {
         setInventoryError(`No results found for "${query}"`);
       }
     },
-    [pageSize, setFilteredInventory, setInventoryError, setPage],
+    [pageSize, totalInventoryCount, setFilteredInventory, setInventoryError, setPage],
   );
 
   const paginatedItems = useMemo<InventoryItem[]>(() => {
@@ -395,9 +404,18 @@ export default function InventoryLoad() {
                 <div className="text-text-primary mb-4 flex flex-wrap items-center justify-between gap-4">
                   <p className="text-lg">
                     Showing{' '}
-                    <span className="text-(--color-icon-brand)">{filteredInventory.length}</span>{' '}
-                    matching TM
-                    {filteredInventory.length !== 1 ? 's' : ''} from {baseInventory.length}
+                    {!isSearchResults && Object.keys(checkedFilterOptions).length === 0 ? (
+                      <>
+                        all <span className="text-interactive-primary">{totalInventoryCount}</span>{' '}
+                        TMs
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-(--color-icon-brand)">{matchingInventoryCount}</span>{' '}
+                        matching TM{matchingInventoryCount !== 1 ? 's' : ''} from{' '}
+                        {totalInventoryCount}
+                      </>
+                    )}
                   </p>
 
                   <div className="flex flex-wrap items-center gap-2">
