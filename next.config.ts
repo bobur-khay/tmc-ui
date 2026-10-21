@@ -1,9 +1,11 @@
 import type { NextConfig } from 'next';
 
 const TMC_SERVER_URL = process.env.TMC_SERVER_URL ?? process.env.VITE_SERVER_URL;
+const BASE_PATH = process.env.BASE_PATH;
 const useApiProxy =
   process.env.NODE_ENV === 'development' && !!TMC_SERVER_URL && process.env.IS_STATIC !== 'true';
 const nextConfig: NextConfig = {
+  basePath: BASE_PATH,
   /*
   IMPORTANT:
   The env vars defined here become public and you should not define secrets here.
@@ -12,6 +14,7 @@ const nextConfig: NextConfig = {
   */
   output: process.env.IS_STATIC === 'true' ? 'export' : undefined,
   env: {
+    BASE_PATH,
     TMC_SERVER_URL,
     IS_STATIC: process.env.IS_STATIC,
     TOKEN_URL: process.env.TOKEN_URL ?? process.env.VITE_TOKEN_URL,

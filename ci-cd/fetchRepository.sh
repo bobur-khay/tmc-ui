@@ -11,7 +11,7 @@ Flags:
   
 Example:
   ./$(basename "$0") https://gitlab.com/catalog-example.git
-  ./$(basename "$0") https://github.com/wot-oss/example-catalog.git public	
+  ./$(basename "$0") https://github.com/wot-oss/example-catalog.git catalog
 EOF
   exit 0
 }

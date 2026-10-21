@@ -9,7 +9,7 @@ show_help() {
     Flags:
     -h|--help   Show this help message
     Example:
-        ./$(basename "$0") public
+        ./$(basename "$0") catalog
 EOF
   exit 0
 }

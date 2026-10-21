@@ -11,6 +11,8 @@ next-env.d.ts
 # production
 /build
 dist
+/out
+/catalog
 
 .yarn
 /docs

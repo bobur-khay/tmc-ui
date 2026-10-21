@@ -1,21 +1,21 @@
 import { ensureTrailingSlash, normalizeRelativePathSegment } from '../utils/strings';
-import { REPOSITORY_CATALOG_DEFAULT_FOLDER, INVENTORY_FILENAME } from '../utils/constants';
+import {
+  CATALOG_ROOT_FOLDER,
+  REPOSITORY_CATALOG_DEFAULT_FOLDER,
+  INVENTORY_FILENAME,
+} from '../utils/constants';
 import type { DetailedInventoryItem, InventoryItem } from '@/app/_components/inventory/types';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export async function fetchLocalDataInventory(signal?: AbortSignal): Promise<InventoryItem[]> {
-  const baseUrl = process.env.API_BASE;
-  if (!baseUrl) {
-    throw new Error('Base url not set');
-  }
   const folder = ensureTrailingSlash(
     normalizeRelativePathSegment(REPOSITORY_CATALOG_DEFAULT_FOLDER),
   );
   const filename = normalizeRelativePathSegment(INVENTORY_FILENAME);
 
-  const relativePath = `${normalizeRelativePathSegment(baseUrl)}${folder}${filename}`;
-  const url = new URL(`/${normalizeRelativePathSegment(relativePath)}`, window.location.origin);
+  const basePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/`;
+  const url = new URL(`${basePath}${folder}${filename}`, window.location.origin);
 
   const res = await fetch(url.toString(), { signal });
   if (!res.ok) {
@@ -46,8 +46,8 @@ export async function fetchDataFromTxT(baseUrl: string, textFilename: string): P
   );
   const filename = normalizeRelativePathSegment(textFilename);
 
-  const relativePath = `${normalizeRelativePathSegment(baseUrl)}${folder}${filename}`;
-  const url = new URL(`/${normalizeRelativePathSegment(relativePath)}`, window.location.origin);
+  const basePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/`;
+  const url = new URL(`${basePath}${folder}${filename}`, baseUrl);
 
   const res = await fetch(url.toString());
   if (!res.ok) {
@@ -72,8 +72,8 @@ export async function fetchDataFromTxT(baseUrl: string, textFilename: string): P
 export async function fetchLocalThingModel(fullpath: string): Promise<DetailedInventoryItem> {
   isDevelopment && console.warn('Fetching local Thing Model from path:', fullpath);
 
-  const basePath = import.meta.env.BASE_URL || '/';
-  const urlBase = `${basePath}${fullpath.startsWith('/') ? fullpath.slice(1) : fullpath}`;
+  const basePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/`;
+  const urlBase = `${basePath}${CATALOG_ROOT_FOLDER}/${normalizeRelativePathSegment(fullpath)}`;
   isDevelopment && console.warn('Computed URL base for Thing Model:', urlBase);
   const url = new URL(`${urlBase}`, window.location.origin);
 

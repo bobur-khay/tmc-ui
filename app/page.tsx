@@ -37,6 +37,7 @@ export default function InventoryLoad() {
 
   // Inventory
   const [baseInventory, setBaseInventory] = useState<InventoryItem[]>([]);
+  console.log(baseInventory);
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [totalInventoryCount, setTotalInventoryCount] = useState(0);
   const [matchingInventoryCount, setMatchingInventoryCount] = useState(0);

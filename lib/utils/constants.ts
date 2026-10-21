@@ -38,7 +38,9 @@ export const SCROLL_THRESHOLD_PX = 64;
 
 export const INVENTORY_TIMEOUT_MS = 10000;
 
-export const REPOSITORY_CATALOG_DEFAULT_FOLDER = '.tmc/';
+export const CATALOG_ROOT_FOLDER = 'catalog';
+
+export const REPOSITORY_CATALOG_DEFAULT_FOLDER = `${CATALOG_ROOT_FOLDER}/.tmc/`;
 
 export const AUTHORS_FILENAME = 'tmnames.txt'; // it will be latter another file
 
