@@ -1,6 +1,7 @@
 # Refactoring Draft
 
 - env variables change requires server restart
+- env variables should be under github-pages environment
 
 ## Next.js API proxy configuration
 

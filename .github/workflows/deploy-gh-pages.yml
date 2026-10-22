@@ -21,6 +21,7 @@ concurrency:
 jobs:
   # Build job
   build:
+    environment: github-pages
     runs-on: ubuntu-latest
     env:
       IS_STATIC: 'true'
