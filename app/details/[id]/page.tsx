@@ -6,6 +6,7 @@ import { fetchLocalThingModel } from '@/lib/services/localData';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import {
   ArrowLeftIcon,
+  ArrowsPointingOutIcon,
   ShareIcon,
   CodeBracketIcon,
   PlusIcon,
@@ -13,6 +14,7 @@ import {
 } from '@heroicons/react/20/solid';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ErrorUI } from '@/app/_components/error/ErrorUI';
 import type { DetailedInventoryItem } from '@/app/_components/inventory/types';
@@ -37,6 +39,9 @@ export default function Details() {
   const [isLoading, setLoading] = useState(true);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [isTmJsonOpen, setTmJsonOpen] = useState(false);
+
+  const imageSrc = buildItemImageSrc(TM?.tmName, TM?.attachments);
+  const imageTitle = TM?.title || TM?.name || TM?.tmName || 'Product image';
 
   const navigateBack = () => {
     router.push('/');
@@ -147,13 +152,21 @@ export default function Details() {
         </header>
         <div className="grid min-w-0 gap-8 md:grid-cols-[18rem_minmax(0,1fr)] lg:gap-12">
           <aside className="min-w-0">
-            <div className="bg-media overflow-hidden rounded-lg">
+            <Link
+              href={`/details/${encodeURIComponent(id)}/image`}
+              aria-label={`Open image of ${imageTitle} in fullscreen`}
+              title="View fullscreen"
+              className="bg-media focus-visible:outline-focus-ring relative block w-full cursor-pointer overflow-hidden rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
               <img
-                alt={`Product image of ${TM.name ?? TM.tmName}`}
-                src={buildItemImageSrc(TM.tmName, TM.attachments)}
+                alt={`Product image of ${imageTitle}`}
+                src={imageSrc}
                 className="aspect-square w-full object-contain p-6"
               />
-            </div>
+              <span className="bg-surface-modal text-text-primary absolute right-3 bottom-3 rounded p-1.5 shadow-sm">
+                <ArrowsPointingOutIcon aria-hidden="true" className="size-4" />
+              </span>
+            </Link>
             {(TM.versions?.length ?? 0) > 1 && (
               <div className="mt-5">
                 <div className="mb-2 flex items-baseline justify-between gap-2">

@@ -6,10 +6,18 @@ import { useState } from 'react';
 interface ShareModalProps {
   url: string;
   version?: string;
+  title?: string;
+  description?: string;
   onClose: () => void;
 }
 
-export default function ShareModal({ url, version, onClose }: ShareModalProps) {
+export default function ShareModal({
+  url,
+  version,
+  title = 'Share Thing Model',
+  description,
+  onClose,
+}: ShareModalProps) {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
 
   const copyLink = async () => {
@@ -28,7 +36,7 @@ export default function ShareModal({ url, version, onClose }: ShareModalProps) {
         <DialogPanel className="bg-surface-modal border-border-subtle max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-auto rounded-lg border shadow-xl">
           <div className="border-border-subtle flex items-center gap-4 border-b px-5 py-4">
             <DialogTitle className="text-text-primary min-w-0 flex-1 text-lg font-semibold">
-              Share Thing Model
+              {title}
             </DialogTitle>
             <Button
               variant="plain"
@@ -43,9 +51,10 @@ export default function ShareModal({ url, version, onClose }: ShareModalProps) {
           </div>
           <div className="space-y-3 p-5">
             <DialogDescription className="text-text-secondary text-sm wrap-break-word">
-              {version
-                ? `This link shares ${version} of this Thing Model`
-                : 'This link shares the currently displayed version of this Thing Model.'}
+              {description ??
+                (version
+                  ? `This link shares ${version} of this Thing Model`
+                  : 'This link shares the currently displayed version of this Thing Model.')}
             </DialogDescription>
             <div>
               <input
