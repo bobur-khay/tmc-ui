@@ -105,25 +105,47 @@ export default function InventoryLoad() {
       setInventoryError(null);
       setIsInventoryLoading(true);
       searchQuery.trim() && setSearchProgress(80);
-
       try {
         let nextFilteredInventory: InventoryItem[];
         let nextMatchingInventoryCount: number | undefined;
         if (process.env.TMC_SERVER_URL) {
           //Server Filtering
-          const { data, meta } = await fetchApiDataInventory(
-            process.env.API_BASE,
-            {
-              signal,
-              authorizationHeader,
-              filters: checkedFilterOptions,
-              search: searchQuery,
-            },
-            isInitialLoad.current ? undefined : pageNumber,
-            isInitialLoad.current ? undefined : pageSize,
-          );
-          nextFilteredInventory = data as InventoryItem[];
-          nextMatchingInventoryCount = meta.page.totalElements;
+          const isSearchNFilter =
+            Object.keys(checkedFilterOptions).length > 0 && searchQuery.trim();
+          const [filterResponse, searchResponse] = await Promise.all([
+            isInitialLoad.current || Object.keys(checkedFilterOptions).length > 0
+              ? fetchApiDataInventory(
+                  process.env.API_BASE,
+                  { signal, authorizationHeader, filters: checkedFilterOptions },
+                  isSearchNFilter || isInitialLoad.current ? undefined : pageNumber,
+                  isSearchNFilter || isInitialLoad.current ? undefined : pageSize,
+                )
+              : undefined,
+            searchQuery.trim()
+              ? fetchApiDataInventory(
+                  process.env.API_BASE,
+                  { signal, authorizationHeader, search: searchQuery },
+                  isSearchNFilter || isInitialLoad.current ? undefined : pageNumber,
+                  isSearchNFilter || isInitialLoad.current ? undefined : pageSize,
+                )
+              : undefined,
+          ]);
+
+          if (filterResponse && searchResponse) {
+            const searchTmNames = new Set(
+              (searchResponse.data as InventoryItem[]).map((item) => item.tmName),
+            );
+            nextFilteredInventory = (filterResponse.data as InventoryItem[]).filter((item) =>
+              searchTmNames.has(item.tmName),
+            );
+            nextMatchingInventoryCount = nextFilteredInventory.length;
+            const pageStart = (pageNumber - 1) * pageSize;
+            nextFilteredInventory = nextFilteredInventory.slice(pageStart, pageStart + pageSize);
+          } else {
+            const response = filterResponse ?? searchResponse;
+            nextFilteredInventory = (response?.data as InventoryItem[] | undefined) ?? [];
+            nextMatchingInventoryCount = response?.meta.page.totalElements;
+          }
         } else {
           // Client Filtering
           if (isInitialLoad.current) {
@@ -328,157 +350,155 @@ export default function InventoryLoad() {
   }, [filteredInventoryPage, pageNumber, pageSize]);
 
   return (
-    <>
-      <div className="bg-surface-canvas min-h-dvh py-10">
-        <main>
-          <div
-            id="search-bar"
-            className="mb-10 flex justify-center gap-4 px-4 sm:px-6 md:flex-row md:items-center"
-          >
-            <div className="w-full md:w-3/4 lg:w-3/5">
-              {process.env.TMC_SERVER_URL && (
-                <Search
-                  progressState={searchProgress}
-                  setProgressState={setSearchProgress}
-                  query={searchQuery}
-                  setQuery={setSearchQuery}
-                />
-              )}
-            </div>
-          </div>
-          <div className="max-w-screen-3xl flex flex-col gap-12 px-4 sm:px-6 lg:flex-row lg:px-8">
-            {/* Sidebar */}
-            <aside className="w-full rounded-lg lg:w-1/4 lg:max-w-72" aria-label="Filters">
-              <SideBar
-                filters={filters}
-                onFilterCheck={toggleFilter}
-                resetFilters={() => {
-                  setFilters({ ...availableFilters.current });
-                }}
+    <div className="bg-surface-canvas min-h-dvh py-10">
+      <main>
+        <div
+          id="search-bar"
+          className="mb-10 flex justify-center gap-4 px-4 sm:px-6 md:flex-row md:items-center"
+        >
+          <div className="w-full md:w-3/4 lg:w-3/5">
+            {process.env.TMC_SERVER_URL && (
+              <Search
+                progressState={searchProgress}
+                setProgressState={setSearchProgress}
+                query={searchQuery}
+                setQuery={setSearchQuery}
               />
-            </aside>
-
-            {/* Results */}
-            {inventoryError ? (
-              <ErrorUI
-                title={
-                  inventoryError === 'No items match these filters' ||
-                  inventoryError.startsWith('No results found for "')
-                    ? 'Nothing found'
-                    : "Couldn't load inventory"
-                }
-                description={inventoryError}
-                buttonText="Retry"
-                buttonOnclick={applyFilters}
-              />
-            ) : (
-              <section className="w-full flex-1 lg:w-3/4">
-                <div className="text-text-primary mb-4 flex flex-wrap items-center justify-between gap-4">
-                  {isInventoryLoading ? (
-                    <p>Loading...</p>
-                  ) : (
-                    <p className="text-lg">
-                      Showing{' '}
-                      {Object.keys(checkedFilterOptions).length === 0 ? (
-                        <>
-                          all{' '}
-                          <span className="text-interactive-primary">{baseInventory.length}</span>{' '}
-                          TMs
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-(--color-icon-brand)">
-                            {totalFilteredInventoryCount}
-                          </span>{' '}
-                          matching TM{totalFilteredInventoryCount !== 1 ? 's' : ''} from{' '}
-                          {baseInventory.length}
-                        </>
-                      )}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="text-text-primary flex items-center gap-2 text-sm">
-                      TMs per page:
-                      <Dropdown
-                        id="page-size"
-                        label="TMs per page"
-                        value={String(pageSize)}
-                        onChange={async (value) => {
-                          await handlePageSizeChangeServer(Number(value));
-                        }}
-                        options={PAGE_SIZE_OPTIONS.map((n) => ({
-                          key: String(n),
-                          value: String(n),
-                        }))}
-                        showChevron={true}
-                        className="bg-surface-canvas rounded px-2 py-1 text-sm"
-                      />
-                    </label>
-                    <div
-                      role="group"
-                      aria-label="Results view"
-                      className="border-border-default flex shrink-0 gap-0.5 rounded border p-0.5"
-                    >
-                      <Button
-                        type="button"
-                        aria-label="Grid view"
-                        title="Grid view"
-                        aria-pressed={view === 'grid'}
-                        variant={view === 'grid' ? 'solid' : 'plain'}
-                        onClick={() => handleViewChange('grid')}
-                        className="size-6 justify-center p-0!"
-                      >
-                        <Squares2X2Icon className="size-5" aria-hidden="true" />
-                      </Button>
-                      <Button
-                        type="button"
-                        aria-label="List view"
-                        title="List view"
-                        aria-pressed={view === 'list'}
-                        variant={view === 'list' ? 'solid' : 'plain'}
-                        onClick={() => handleViewChange('list')}
-                        className="size-6 justify-center p-0!"
-                      >
-                        <ListBulletIcon className="size-5" aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {process.env.TMC_SERVER_URL ? (
-                  <div>
-                    <InventoryResults
-                      items={filteredInventoryPage}
-                      loading={isInventoryLoading}
-                      view={view}
-                    />
-
-                    <Pagination
-                      page={pageNumber}
-                      totalPages={totalPages}
-                      onPageChange={handlePageChangeServer}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <InventoryResults
-                      items={paginatedItems}
-                      loading={isInventoryLoading}
-                      view={view}
-                    />
-
-                    <Pagination
-                      page={pageNumber}
-                      totalPages={totalPages}
-                      onPageChange={(p) => setPageNumber(p)}
-                    />
-                  </div>
-                )}
-              </section>
             )}
           </div>
-        </main>
-      </div>
-    </>
+        </div>
+        <div className="max-w-screen-3xl flex flex-col gap-12 px-4 sm:px-6 lg:flex-row lg:px-8">
+          {/* Sidebar */}
+          <aside className="w-full rounded-lg lg:w-1/4 lg:max-w-72" aria-label="Filters">
+            <SideBar
+              filters={filters}
+              onFilterCheck={toggleFilter}
+              resetFilters={() => {
+                setFilters({ ...availableFilters.current });
+                setSearchQuery('');
+              }}
+            />
+          </aside>
+
+          {/* Results */}
+          {inventoryError ? (
+            <ErrorUI
+              title={
+                inventoryError === 'No items match these filters' ||
+                inventoryError.startsWith('No results found for "')
+                  ? 'Nothing found'
+                  : "Couldn't load inventory"
+              }
+              description={inventoryError}
+              buttonText="Retry"
+              buttonOnclick={applyFilters}
+            />
+          ) : (
+            <section className="w-full flex-1 lg:w-3/4">
+              <div className="text-text-primary mb-4 flex flex-wrap items-center justify-between gap-4">
+                {isInventoryLoading ? (
+                  <p>Loading...</p>
+                ) : (
+                  <p className="text-lg">
+                    Showing{' '}
+                    {Object.keys(checkedFilterOptions).length === 0 ? (
+                      <>
+                        all <span className="text-interactive-primary">{baseInventory.length}</span>{' '}
+                        TMs
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-(--color-icon-brand)">
+                          {totalFilteredInventoryCount}
+                        </span>{' '}
+                        matching TM{totalFilteredInventoryCount !== 1 ? 's' : ''} from{' '}
+                        {baseInventory.length}
+                      </>
+                    )}
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="text-text-primary flex items-center gap-2 text-sm">
+                    TMs per page:
+                    <Dropdown
+                      id="page-size"
+                      label="TMs per page"
+                      value={String(pageSize)}
+                      onChange={async (value) => {
+                        await handlePageSizeChangeServer(Number(value));
+                      }}
+                      options={PAGE_SIZE_OPTIONS.map((n) => ({
+                        key: String(n),
+                        value: String(n),
+                      }))}
+                      showChevron={true}
+                      className="bg-surface-canvas rounded px-2 py-1 text-sm"
+                    />
+                  </label>
+                  <div
+                    role="group"
+                    aria-label="Results view"
+                    className="border-border-default flex shrink-0 gap-0.5 rounded border p-0.5"
+                  >
+                    <Button
+                      type="button"
+                      aria-label="Grid view"
+                      title="Grid view"
+                      aria-pressed={view === 'grid'}
+                      variant={view === 'grid' ? 'solid' : 'plain'}
+                      onClick={() => handleViewChange('grid')}
+                      className="size-6 justify-center p-0!"
+                    >
+                      <Squares2X2Icon className="size-5" aria-hidden="true" />
+                    </Button>
+                    <Button
+                      type="button"
+                      aria-label="List view"
+                      title="List view"
+                      aria-pressed={view === 'list'}
+                      variant={view === 'list' ? 'solid' : 'plain'}
+                      onClick={() => handleViewChange('list')}
+                      className="size-6 justify-center p-0!"
+                    >
+                      <ListBulletIcon className="size-5" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {process.env.TMC_SERVER_URL ? (
+                <div>
+                  <InventoryResults
+                    items={filteredInventoryPage}
+                    loading={isInventoryLoading}
+                    view={view}
+                  />
+
+                  <Pagination
+                    page={pageNumber}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChangeServer}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <InventoryResults
+                    items={paginatedItems}
+                    loading={isInventoryLoading}
+                    view={view}
+                  />
+
+                  <Pagination
+                    page={pageNumber}
+                    totalPages={totalPages}
+                    onPageChange={(p) => setPageNumber(p)}
+                  />
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }
