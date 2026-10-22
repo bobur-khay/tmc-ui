@@ -22,6 +22,7 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+    environment: github-pages
     env:
       IS_STATIC: 'true'
       TMC_SERVER_URL: ${{ vars.TMC_SERVER_URL }}
