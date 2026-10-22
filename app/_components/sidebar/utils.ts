@@ -103,7 +103,7 @@ async function getFilterOptionsResults(
         });
         if (apiResponse.length === 0) {
           filterOptionResults[typedKey] = {
-            errorMessage: `No filter data available`,
+            message: `No filter data available`,
           };
         } else {
           const distinctValues = new Map<string, string>();
@@ -125,7 +125,7 @@ async function getFilterOptionsResults(
       } catch (err) {
         console.error(err instanceof Error ? err.message : err);
         filterOptionResults[typedKey] = {
-          errorMessage: 'Could not fetch the filters. Refresh the page to try again.',
+          message: 'Could not fetch the filters. Refresh the page to try again.',
         };
       }
     }),

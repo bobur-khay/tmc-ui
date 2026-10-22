@@ -1,11 +1,10 @@
 'use client';
-import Loader from './_components/base/Loader';
 import Dropdown from './_components/base/Dropdown';
 import Button from './_components/base/Button';
 import { Squares2X2Icon, ListBulletIcon } from '@heroicons/react/24/outline';
 import InventoryResults from './_components/inventory/InventoryResults';
 import Pagination from './_components/Pagination';
-import { Search } from './_components/Search';
+import { Search, type SearchProgress } from './_components/filters/Search';
 import { SideBar } from './_components/sidebar/SideBar';
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -30,33 +29,24 @@ const DEFAULT_PAGE_SIZE = 20;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 const FILTER_DEBOUNCE_MS = 800;
 
-// TODO: check if signals are actually necessary
 // TODO: Implement proper error message display in the app
+// TODO: Implement additive search and filtering. When additively nothing is found tell the user to try exclusive search
 export default function InventoryLoad() {
   const { authorizationHeader } = useAuth();
 
-  // Inventory
+  /* Inventory */
+  // All inventory items fetched during load
   const [baseInventory, setBaseInventory] = useState<InventoryItem[]>([]);
-  console.log(baseInventory);
-  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
-  const [totalInventoryCount, setTotalInventoryCount] = useState(0);
-  const [matchingInventoryCount, setMatchingInventoryCount] = useState(0);
-  const [isSearchResults, setIsSearchResults] = useState(false);
+  // Filtered items for the current page
+  const [filteredInventoryPage, setFilteredInventoryPage] = useState<InventoryItem[]>([]);
+  // Total number of inventory items matching the current filters
+  const [totalFilteredInventoryCount, setTotalFilteredInventoryCount] = useState(0);
+  const isInitialLoad = useRef(true);
   const [isInventoryLoading, setIsInventoryLoading] = useState(true);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
+
+  /* Grid/List view */
   const [view, setView] = useState<'grid' | 'list'>('grid');
-
-  useEffect(() => {
-    try {
-      const storedView = getLocalStorage(INVENTORY_VIEW_KEY);
-      if (storedView === 'grid' || storedView === 'list') {
-        setView(storedView);
-      }
-    } catch (error) {
-      console.warn('Could not restore the results view preference', error);
-    }
-  }, []);
-
   const handleViewChange = (nextView: 'grid' | 'list') => {
     setView(nextView);
     try {
@@ -66,30 +56,28 @@ export default function InventoryLoad() {
     }
   };
 
-  // Pagination
-  const [page, setPage] = useState<number>(1);
+  /* Pagination */
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  // used for rendering the page size dropdown
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
+  // used for functions that need immediate change in value of the page size
+  const pageSizeRef = useRef<number | null>(null);
   const totalPages = useMemo(
-    () =>
-      Math.max(
-        1,
-        Math.ceil((isSearchResults ? filteredInventory.length : baseInventory.length) / pageSize),
-      ),
-    [pageSize, baseInventory, filteredInventory, isSearchResults],
+    () => Math.max(1, Math.ceil(totalFilteredInventoryCount / pageSize)),
+    [totalFilteredInventoryCount, pageSize],
   );
 
-  // Filters
-  const [initialFilters, setInitialFilters] = useState<Filters>(EMPTY_FILTERS);
+  /* Filters */
+  const availableFilters = useRef<Filters>(EMPTY_FILTERS);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [areAvailableFiltersLoading, setAreAvailableFiltersLoading] = useState<boolean>(true);
-  const haveFiltersInitialized = useRef(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchProgress, setSearchProgress] = useState<SearchProgress>(0);
 
-  // filterInventory depends on checkedFilterOptions, thus needs useMemo()
   const checkedFilterOptions: CheckedFilterOptions = useMemo(() => {
     const _checkedFilterOptions = {} as CheckedFilterOptions;
     for (const filterKey of Object.keys(filters)) {
       const key = filterKey as FilterKey;
-      if ('errorMessage' in filters[key]) continue;
+      if ('message' in filters[key]) continue;
       const filteredOptions = filters[key].filter((opt) => opt.checked).map((opt) => opt.value);
       if (filteredOptions.length === 0) continue;
       _checkedFilterOptions[key] = filteredOptions;
@@ -100,7 +88,7 @@ export default function InventoryLoad() {
   const toggleFilter = useCallback((filterType: FilterKey, optionValue: string) => {
     setIsInventoryLoading(true);
     setFilters((prevFilters) => {
-      if ('errorMessage' in prevFilters[filterType]) {
+      if ('message' in prevFilters[filterType]) {
         return prevFilters;
       }
       return {
@@ -112,87 +100,68 @@ export default function InventoryLoad() {
     });
   }, []);
 
-  const resetFilters = useCallback(() => {
-    setIsInventoryLoading(true);
-    setFilters({ ...initialFilters });
-  }, [initialFilters]);
-
   const applyFilters = useCallback(
-    async ({
-      isInitialLoad,
-      initialPageSize = pageSize,
-      isReset,
-      signal = new AbortController().signal,
-    }: {
-      isInitialLoad?: boolean;
-      initialPageSize?: number;
-      isReset?: boolean;
-      signal?: AbortSignal;
-    }) => {
+    async (signal: AbortSignal = new AbortController().signal) => {
       setInventoryError(null);
       setIsInventoryLoading(true);
+      searchQuery.trim() && setSearchProgress(80);
+
       try {
         let nextFilteredInventory: InventoryItem[];
         let nextMatchingInventoryCount: number | undefined;
-        if (isReset) {
-          nextFilteredInventory = baseInventory;
-          nextMatchingInventoryCount = totalInventoryCount;
+        if (process.env.TMC_SERVER_URL) {
+          //Server Filtering
+          const { data, meta } = await fetchApiDataInventory(
+            process.env.API_BASE,
+            {
+              signal,
+              authorizationHeader,
+              filters: checkedFilterOptions,
+              search: searchQuery,
+            },
+            isInitialLoad.current ? undefined : pageNumber,
+            isInitialLoad.current ? undefined : pageSize,
+          );
+          nextFilteredInventory = data as InventoryItem[];
+          nextMatchingInventoryCount = meta.page.totalElements;
         } else {
-          if (process.env.TMC_SERVER_URL) {
-            //Server Filtering
-            const { data, meta } = await fetchApiDataInventory(
-              process.env.API_BASE,
-              {
-                signal,
-                authorizationHeader,
-                filters: checkedFilterOptions,
-              },
-              isInitialLoad ? undefined : page,
-              isInitialLoad ? undefined : pageSize,
-            );
-            nextFilteredInventory = data as InventoryItem[];
-            nextMatchingInventoryCount = meta.page.totalElements;
+          // Client Filtering
+          if (isInitialLoad.current) {
+            const response = await fetchLocalDataInventory(signal);
+            const filteredInventory = response.filter((item) => item['schema:mpn'] !== '');
+            nextFilteredInventory = filteredInventory;
           } else {
-            // Client Filtering
-            if (isInitialLoad) {
-              const response = await fetchLocalDataInventory(signal);
-              const filteredInventory = response.filter((item) => item['schema:mpn'] !== '');
-              nextFilteredInventory = filteredInventory;
-            } else {
-              nextFilteredInventory = baseInventory.filter((item) => {
-                const matchesCatalog =
-                  !checkedFilterOptions.repository?.length ||
-                  checkedFilterOptions.repository?.includes(item.repo);
-                const matchesManufacturer =
-                  !checkedFilterOptions.manufacturer?.length ||
-                  checkedFilterOptions.manufacturer?.includes(
-                    item['schema:manufacturer']?.['schema:name'],
-                  );
-                const matchesAuthor =
-                  !checkedFilterOptions.author?.length ||
-                  checkedFilterOptions.author?.some((author) =>
-                    item.name?.toLowerCase().includes(author.toLowerCase()),
-                  );
-                return matchesCatalog && matchesManufacturer && matchesAuthor;
-              });
-            }
+            nextFilteredInventory = baseInventory.filter((item) => {
+              const matchesCatalog =
+                !checkedFilterOptions.repository?.length ||
+                checkedFilterOptions.repository?.includes(item.repo);
+              const matchesManufacturer =
+                !checkedFilterOptions.manufacturer?.length ||
+                checkedFilterOptions.manufacturer?.includes(
+                  item['schema:manufacturer']?.['schema:name'],
+                );
+              const matchesAuthor =
+                !checkedFilterOptions.author?.length ||
+                checkedFilterOptions.author?.some((author) =>
+                  item.name?.toLowerCase().includes(author.toLowerCase()),
+                );
+              return matchesCatalog && matchesManufacturer && matchesAuthor;
+            });
           }
         }
-        if (signal.aborted) return;
         const nextCount = nextMatchingInventoryCount ?? nextFilteredInventory.length;
-        setMatchingInventoryCount(nextCount);
-        setIsSearchResults(false);
-        setPage(1);
-        if (isInitialLoad) {
-          setTotalInventoryCount(nextCount);
+        setTotalFilteredInventoryCount(nextCount);
+        setPageNumber(1);
+        if (isInitialLoad.current) {
           setBaseInventory(nextFilteredInventory);
-          setFilteredInventory(nextFilteredInventory.slice(0, initialPageSize));
+          setFilteredInventoryPage(nextFilteredInventory.slice(0, pageSize));
+          isInitialLoad.current = false;
         } else {
-          setFilteredInventory(nextFilteredInventory);
+          setFilteredInventoryPage(nextFilteredInventory);
         }
         if (!nextFilteredInventory.length) {
           setInventoryError(
-            isInitialLoad ? 'The inventory is empty' : 'No items match these filters',
+            isInitialLoad.current ? 'The inventory is empty' : 'No items match these filters',
           );
         }
         return nextFilteredInventory;
@@ -203,54 +172,68 @@ export default function InventoryLoad() {
         console.error(err instanceof Response ? await err.text() : err);
         setInventoryError("That didn't work. Please try again.");
       } finally {
+        searchQuery.trim() && setSearchProgress(100);
         if (!signal.aborted) setIsInventoryLoading(false);
       }
     },
-    [authorizationHeader, checkedFilterOptions, baseInventory, page, pageSize, totalInventoryCount],
+    [baseInventory, pageSize, authorizationHeader, checkedFilterOptions, searchQuery, pageNumber],
   );
-
   const applyLatestFilters = useEffectEvent((signal: AbortSignal) => {
-    void applyFilters({
-      isReset: !Object.keys(checkedFilterOptions).length,
-      signal,
-    });
+    void applyFilters(signal);
   });
 
+  /* Debounced application of filters */
   useEffect(() => {
-    if (areAvailableFiltersLoading) return;
-    if (!haveFiltersInitialized.current) {
-      haveFiltersInitialized.current = true;
+    if (isInitialLoad.current) return;
+
+    /* Reset filters */
+    if (!Object.keys(checkedFilterOptions).length && !searchQuery) {
+      setFilteredInventoryPage(baseInventory.slice(0, pageSize));
+      setTotalFilteredInventoryCount(baseInventory.length);
+      setIsInventoryLoading(false);
+      setInventoryError(null);
       return;
     }
 
+    /* Apply the latest filters after a debounce */
     const controller = new AbortController();
     const timeout = window.setTimeout(
       () => applyLatestFilters(controller.signal),
-      Object.keys(checkedFilterOptions).length ? FILTER_DEBOUNCE_MS : 0,
+      FILTER_DEBOUNCE_MS,
     );
     return () => {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [checkedFilterOptions, areAvailableFiltersLoading]);
+  }, [applyFilters, baseInventory, checkedFilterOptions, pageSize, searchQuery]);
 
-  // Load the inventory and the available filters on mount
+  /* Load the inventory and the available filters on mount */
   useEffect(() => {
     const controller = new AbortController();
-    let initialPageSize = DEFAULT_PAGE_SIZE;
 
+    /* View Preference */
+    try {
+      const storedView = getLocalStorage(INVENTORY_VIEW_KEY);
+      if (storedView === 'grid' || storedView === 'list') {
+        setView(storedView);
+      }
+    } catch (error) {
+      console.warn('Could not restore the results view preference', error);
+    }
+
+    /* Page Size Preference */
     try {
       const storedPageSize = Number(getLocalStorage(INVENTORY_PAGE_SIZE_KEY));
       if (PAGE_SIZE_OPTIONS.includes(storedPageSize)) {
-        initialPageSize = storedPageSize;
+        pageSizeRef.current = storedPageSize;
         setPageSize(storedPageSize);
       }
     } catch (error) {
       console.warn('Could not restore the page size preference', error);
     }
 
+    /* Load available filters */
     async function loadFilters() {
-      setAreAvailableFiltersLoading(true);
       let filterOptionResults: Filters;
 
       if (process.env.TMC_SERVER_URL) {
@@ -263,15 +246,13 @@ export default function InventoryLoad() {
       }
 
       if (controller.signal.aborted) return;
-      setInitialFilters(filterOptionResults);
+      availableFilters.current = filterOptionResults;
       setFilters(filterOptionResults);
-      setAreAvailableFiltersLoading(false);
     }
-
-    void applyFilters({ isInitialLoad: true, initialPageSize, signal: controller.signal });
     void loadFilters().catch((err: unknown) => {
       if (!controller.signal.aborted) console.error(err);
     });
+    void applyFilters(controller.signal);
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -279,8 +260,7 @@ export default function InventoryLoad() {
   const handlePageChangeServer = useCallback(
     async (newPage: number) => {
       if (!process.env.TMC_SERVER_URL) return;
-      setPage(newPage);
-      if (isSearchResults) return;
+      setPageNumber(newPage);
 
       const controller = new AbortController();
 
@@ -296,20 +276,20 @@ export default function InventoryLoad() {
           pageSize,
         );
 
-        setFilteredInventory(data as InventoryItem[]);
+        setFilteredInventoryPage(data as InventoryItem[]);
       } catch {
         if (controller.signal.aborted) return;
         setInventoryError('Could not fetch inventory data');
       }
     },
-    [authorizationHeader, checkedFilterOptions, pageSize, isSearchResults],
+    [authorizationHeader, checkedFilterOptions, pageSize],
   );
 
   // Pagination
   const handlePageSizeChangeServer = useCallback(
     async (newPageSize: number) => {
       setPageSize(newPageSize);
-      setPage(1);
+      setPageNumber(1);
 
       try {
         setLocalStorage(String(newPageSize), INVENTORY_PAGE_SIZE_KEY);
@@ -317,7 +297,7 @@ export default function InventoryLoad() {
         console.warn('Could not save the page size preference', error);
       }
 
-      if (!process.env.TMC_SERVER_URL || isSearchResults) return;
+      if (!process.env.TMC_SERVER_URL) return;
 
       const controller = new AbortController();
 
@@ -333,35 +313,19 @@ export default function InventoryLoad() {
           newPageSize,
         );
 
-        setFilteredInventory(data as InventoryItem[]);
+        setFilteredInventoryPage(data as InventoryItem[]);
       } catch (err: unknown) {
         if (controller.signal.aborted) return;
         console.error(err);
       }
     },
-    [authorizationHeader, checkedFilterOptions, isSearchResults],
-  );
-
-  const onSearchResponse = useCallback(
-    (results: InventoryItem[], query: string) => {
-      const hasQuery = query.trim().length > 0;
-      setIsSearchResults(hasQuery);
-      setMatchingInventoryCount(hasQuery ? results.length : totalInventoryCount);
-      setFilteredInventory(
-        !hasQuery && process.env.TMC_SERVER_URL ? results.slice(0, pageSize) : results,
-      );
-      setPage(1);
-      if (results.length === 0) {
-        setInventoryError(`No results found for "${query}"`);
-      }
-    },
-    [pageSize, totalInventoryCount, setFilteredInventory, setInventoryError, setPage],
+    [authorizationHeader, checkedFilterOptions],
   );
 
   const paginatedItems = useMemo<InventoryItem[]>(() => {
-    const start = (page - 1) * pageSize;
-    return filteredInventory.slice(start, start + pageSize);
-  }, [filteredInventory, page, pageSize]);
+    const start = (pageNumber - 1) * pageSize;
+    return filteredInventoryPage.slice(start, start + pageSize);
+  }, [filteredInventoryPage, pageNumber, pageSize]);
 
   return (
     <>
@@ -374,9 +338,10 @@ export default function InventoryLoad() {
             <div className="w-full md:w-3/4 lg:w-3/5">
               {process.env.TMC_SERVER_URL && (
                 <Search
-                  onSearchResponse={onSearchResponse}
-                  baseInventory={baseInventory}
-                  setError={setInventoryError}
+                  progressState={searchProgress}
+                  setProgressState={setSearchProgress}
+                  query={searchQuery}
+                  setQuery={setSearchQuery}
                 />
               )}
             </div>
@@ -384,7 +349,13 @@ export default function InventoryLoad() {
           <div className="max-w-screen-3xl flex flex-col gap-12 px-4 sm:px-6 lg:flex-row lg:px-8">
             {/* Sidebar */}
             <aside className="w-full rounded-lg lg:w-1/4 lg:max-w-72" aria-label="Filters">
-              <SideBar filters={filters} onFilterCheck={toggleFilter} resetFilters={resetFilters} />
+              <SideBar
+                filters={filters}
+                onFilterCheck={toggleFilter}
+                resetFilters={() => {
+                  setFilters({ ...availableFilters.current });
+                }}
+              />
             </aside>
 
             {/* Results */}
@@ -398,27 +369,33 @@ export default function InventoryLoad() {
                 }
                 description={inventoryError}
                 buttonText="Retry"
-                buttonOnclick={() => applyFilters({})}
+                buttonOnclick={applyFilters}
               />
             ) : (
               <section className="w-full flex-1 lg:w-3/4">
                 <div className="text-text-primary mb-4 flex flex-wrap items-center justify-between gap-4">
-                  <p className="text-lg">
-                    Showing{' '}
-                    {!isSearchResults && Object.keys(checkedFilterOptions).length === 0 ? (
-                      <>
-                        all <span className="text-interactive-primary">{totalInventoryCount}</span>{' '}
-                        TMs
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-(--color-icon-brand)">{matchingInventoryCount}</span>{' '}
-                        matching TM{matchingInventoryCount !== 1 ? 's' : ''} from{' '}
-                        {totalInventoryCount}
-                      </>
-                    )}
-                  </p>
-
+                  {isInventoryLoading ? (
+                    <p>Loading...</p>
+                  ) : (
+                    <p className="text-lg">
+                      Showing{' '}
+                      {Object.keys(checkedFilterOptions).length === 0 ? (
+                        <>
+                          all{' '}
+                          <span className="text-interactive-primary">{baseInventory.length}</span>{' '}
+                          TMs
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-(--color-icon-brand)">
+                            {totalFilteredInventoryCount}
+                          </span>{' '}
+                          matching TM{totalFilteredInventoryCount !== 1 ? 's' : ''} from{' '}
+                          {baseInventory.length}
+                        </>
+                      )}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="text-text-primary flex items-center gap-2 text-sm">
                       TMs per page:
@@ -470,36 +447,30 @@ export default function InventoryLoad() {
 
                 {process.env.TMC_SERVER_URL ? (
                   <div>
-                    {areAvailableFiltersLoading && <Loader text="Loading catalog..." />}
-                    {!areAvailableFiltersLoading && (
-                      <InventoryResults
-                        items={isSearchResults ? paginatedItems : filteredInventory}
-                        loading={isInventoryLoading}
-                        view={view}
-                      />
-                    )}
+                    <InventoryResults
+                      items={filteredInventoryPage}
+                      loading={isInventoryLoading}
+                      view={view}
+                    />
 
                     <Pagination
-                      page={page}
+                      page={pageNumber}
                       totalPages={totalPages}
                       onPageChange={handlePageChangeServer}
                     />
                   </div>
                 ) : (
                   <div>
-                    {areAvailableFiltersLoading && <Loader text="Loading catalog..." />}
-                    {!areAvailableFiltersLoading && (
-                      <InventoryResults
-                        items={paginatedItems}
-                        loading={isInventoryLoading}
-                        view={view}
-                      />
-                    )}
+                    <InventoryResults
+                      items={paginatedItems}
+                      loading={isInventoryLoading}
+                      view={view}
+                    />
 
                     <Pagination
-                      page={page}
+                      page={pageNumber}
                       totalPages={totalPages}
-                      onPageChange={(p) => setPage(p)}
+                      onPageChange={(p) => setPageNumber(p)}
                     />
                   </div>
                 )}

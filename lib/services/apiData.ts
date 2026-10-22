@@ -10,6 +10,7 @@ interface FetchInventoryOptions {
     readonly manufacturer?: readonly string[];
     readonly repository?: readonly string[];
   };
+  readonly search?: string;
 }
 
 export interface InventoryResponse {
@@ -42,15 +43,16 @@ function buildInventoryUrl(
   filters?: FetchInventoryOptions['filters'],
   page?: number,
   pageSize?: number,
+  search?: string,
 ): string {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
   const searchParams = new URLSearchParams();
 
-  if (page !== undefined) {
+  if (page) {
     searchParams.set('page', String(page));
   }
 
-  if (pageSize !== undefined) {
+  if (pageSize) {
     searchParams.set('pageSize', String(pageSize));
   }
 
@@ -69,7 +71,9 @@ function buildInventoryUrl(
   if (filters?.repository?.length) {
     searchParams.set('repo', filters.repository.join(','));
   }
-
+  if (search) {
+    searchParams.set('search', search);
+  }
   const query = searchParams.toString();
   return `${normalizedBaseUrl}/${INVENTORY_ENDPOINT}?${query}`;
 }
@@ -84,7 +88,7 @@ export async function fetchApiDataInventory(
     throw new Response('Catalog URL not configured', { status: 400 });
   }
 
-  const { signal, authorizationHeader, filters } = options;
+  const { signal, authorizationHeader, filters, search } = options;
   const controller = new AbortController();
   let didTimeout = false;
 
@@ -97,7 +101,7 @@ export async function fetchApiDataInventory(
   signal?.addEventListener('abort', abortFromCaller);
 
   try {
-    const res = await fetch(buildInventoryUrl(baseUrl, filters, page, pageSize), {
+    const res = await fetch(buildInventoryUrl(baseUrl, filters, page, pageSize, search), {
       signal: controller.signal,
       headers: buildRequestHeaders(authorizationHeader),
     });

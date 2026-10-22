@@ -2,16 +2,18 @@ import type { FilterKey, FilterData } from '../filters/types';
 
 interface FilterOptionsProps {
   sectionId: FilterKey;
-  options: readonly FilterData[] | { errorMessage: string };
+  options: readonly FilterData[] | { message: string };
   onOptionChange: (filterKey: FilterKey, optionValue: string) => void;
 }
 
 export function FilterOptions({ sectionId, options, onOptionChange }: FilterOptionsProps) {
-  if ('errorMessage' in options)
-    return <div className="text-text-primary text-sm">{options.errorMessage}</div>;
+  if ('message' in options)
+    return <div className="text-text-primary text-sm">{options.message}</div>;
 
   const sortedOptions = [...options].sort(
-    (optionA, optionB) => Number(optionB.checked) - Number(optionA.checked),
+    (optionA, optionB) =>
+      Number(optionB.checked) - Number(optionA.checked) ||
+      optionA.value.localeCompare(optionB.value),
   );
 
   return (
