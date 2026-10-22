@@ -2,7 +2,7 @@
 import Dropdown from '@/app/_components/base/Dropdown';
 import Loader from '@/app/_components/base/Loader';
 import { fetchTmContentFromServer } from '@/lib/services/apiData';
-import { fetchLocalThingModel } from '@/lib/services/localData';
+import { fetchLocalDataInventory, fetchLocalThingModel } from '@/lib/services/localData';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import {
   ArrowLeftIcon,
@@ -59,8 +59,14 @@ export default function Details() {
             authorizationHeader,
           });
         } else {
-          // TODO: adapt to fetch TM by ID
-          data = await fetchLocalThingModel(TM?.versions?.[0].links.content ?? '');
+          const inventory = await fetchLocalDataInventory();
+          const item = inventory.find((entry) =>
+            entry.versions?.some((version) => version.tmID === id),
+          );
+          const version = item?.versions?.find((entry) => entry.tmID === id);
+          if (!item || !version?.links.content) throw new Error('Thing Model not found.');
+          const content = await fetchLocalThingModel(version.links.content);
+          data = { ...item, ...content };
         }
         setTM(data);
       } catch (err) {

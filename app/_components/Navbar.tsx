@@ -56,12 +56,12 @@ export function Navbar({ isAuthenticationEnabled }: { isAuthenticationEnabled: b
               <img
                 alt="Things model Catalog"
                 className="theme-dark-only h-14 w-auto"
-                src="/tm-catalog-logo-light.svg"
+                src={`${process.env.BASE_PATH || ''}/tm-catalog-logo-light.svg`}
               />
               <img
                 alt="Things model Catalog"
                 className="theme-light-only h-14 w-auto"
-                src="/tm-catalog-logo.svg"
+                src={`${process.env.BASE_PATH || ''}/tm-catalog-logo.svg`}
               />
             </Link>
             <div className="flex items-center gap-2">

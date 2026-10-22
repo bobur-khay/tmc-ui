@@ -3,7 +3,6 @@
 import Button from '@/app/_components/base/Button';
 import { buildItemImageSrc } from '@/app/_components/inventory/InventoryResults';
 import type { DetailedInventoryItem } from '@/app/_components/inventory/types';
-import { CATALOG_ROOT_FOLDER } from '@/lib/utils/constants';
 import { ArrowDownTrayIcon, ShareIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
 import ShareModal from './ShareModal';
@@ -20,11 +19,7 @@ export default function ImageViewer({
   const [isDownloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const imagePath = buildItemImageSrc(TM.tmName, TM.attachments);
-  const imageSrc =
-    !process.env.TMC_SERVER_URL && !imagePath.startsWith('/')
-      ? `${process.env.BASE_PATH || ''}/${CATALOG_ROOT_FOLDER}/${imagePath}`
-      : imagePath;
+  const imageSrc = buildItemImageSrc(TM.tmName, TM.attachments);
   const imageTitle = TM.title || TM.name || TM.tmName || 'Product image';
 
   const downloadImage = async () => {

@@ -2,17 +2,20 @@ import type { NextConfig } from 'next';
 
 const TMC_SERVER_URL = process.env.TMC_SERVER_URL ?? process.env.VITE_SERVER_URL;
 const BASE_PATH = process.env.BASE_PATH;
-const useApiProxy =
-  process.env.NODE_ENV === 'development' && !!TMC_SERVER_URL && process.env.IS_STATIC !== 'true';
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isStaticExport = !isDevelopment && process.env.IS_STATIC === 'true';
+const useApiProxy = isDevelopment && !!TMC_SERVER_URL;
 const nextConfig: NextConfig = {
   basePath: BASE_PATH,
+  trailingSlash: isStaticExport,
+  images: { unoptimized: isStaticExport },
   /*
   IMPORTANT:
   The env vars defined here become public and you should not define secrets here.
 
   Some vars have been renamed and backwards compatibility is provided
   */
-  output: process.env.IS_STATIC === 'true' ? 'export' : undefined,
+  output: isStaticExport ? 'export' : undefined,
   env: {
     BASE_PATH,
     TMC_SERVER_URL,
@@ -28,16 +31,18 @@ const nextConfig: NextConfig = {
     API_BASE: useApiProxy ? '/__tmc_api__' : TMC_SERVER_URL || '/',
   },
 
-  async rewrites() {
-    return useApiProxy
-      ? [
-          {
-            source: '/__tmc_api__/:path*',
-            destination: `${TMC_SERVER_URL.replace(/\/+$/, '')}/:path*`,
-          },
-        ]
-      : [];
-  },
+  ...(useApiProxy
+    ? {
+        async rewrites() {
+          return [
+            {
+              source: '/__tmc_api__/:path*',
+              destination: `${TMC_SERVER_URL.replace(/\/+$/, '')}/:path*`,
+            },
+          ];
+        },
+      }
+    : {}),
   devIndicators: {
     position: 'bottom-right',
   },

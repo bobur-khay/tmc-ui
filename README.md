@@ -22,6 +22,34 @@ changing environment variables, and rebuild production deployments because
 these values are embedded at build time. The deployment instructions below
 still describe the legacy Vite workflow.
 
+## Next.js GitHub Pages Deployment
+
+Select **GitHub Actions** as the Pages source in repository settings. Allow
+`refactor/migration-to-nextjs` to deploy to the `github-pages` environment. The
+workflow runs on pushes to that branch or can be dispatched manually when
+available in the Actions tab.
+
+The workflow uses npm and enables static export with the base path supplied by
+GitHub Pages. It preserves `next.config.ts` instead of injecting another config.
+Static routes use directory-style URLs so direct links work on Pages.
+
+Configure these optional repository Actions variables:
+
+- `CATALOG_REPO_URL`: static catalog Git URL; defaults to
+  `https://github.com/wot-oss/example-catalog.git`. The catalog must satisfy the
+  static catalog contract below. CI fetches it for route generation and copies
+  it into `public/catalog/` so catalog data and attachments are published.
+- `TMC_SERVER_URL`: public HTTPS backend URL. When set, CI skips the local
+  catalog. The backend must be reachable during the build for inventory reads
+  and allow browser requests from the Pages origin through CORS. Build-time
+  inventory reads currently do not supply authentication credentials.
+- `TOKEN_URL`: optional public OAuth token endpoint for backend authentication.
+
+These settings are embedded into the browser bundle; do not put credentials or
+secrets in them. Backend model IDs are exported at build time, so new IDs require
+another deployment. GitHub Pages cannot run the development API proxy or render
+new detail routes on demand.
+
 # TMC User Interface
 
 TMC UI is an open-source web interface for browsing Thing Models (TMs) managed by a [Thing Model Catalog (TMC)](https://github.com/wot-oss/tmc). It supports read-only catalog operations; it is not a browser replacement for the TMC CLI.

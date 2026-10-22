@@ -3,8 +3,9 @@ import Loader from '../base/Loader';
 import { Card } from './Card';
 import Link from 'next/link';
 import type { Attachment, InventoryItem, Version } from './types';
+import { CATALOG_ROOT_FOLDER } from '@/lib/utils/constants';
 
-const DEFAULT_IMAGE_SRC = '/default-image.png';
+const DEFAULT_IMAGE_SRC = `${process.env.BASE_PATH || ''}/default-image.png`;
 
 const buildItemKey = (itemTM: InventoryItem, i: number): string =>
   `${itemTM.repo}:${itemTM.repo}:${itemTM['schema:mpn']}:row-${i}`;
@@ -21,7 +22,7 @@ export const buildItemImageSrc = (
   if (!process.env.TMC_SERVER_URL) {
     if (!tmName || !pngImageSrc) return DEFAULT_IMAGE_SRC;
 
-    return `${tmName}/.attachments/${pngImageSrc?.name}`;
+    return `${process.env.BASE_PATH || ''}/${CATALOG_ROOT_FOLDER}/${tmName}/.attachments/${pngImageSrc.name}`;
   }
 
   if (!pngImageSrc) return DEFAULT_IMAGE_SRC;

@@ -145,7 +145,7 @@ const OpenWithModal: React.FC<OpenWithModalProps> = ({ open, TM, onClose }) => {
     {
       name: 'EdiTDor',
       url: EDITDOR_URL,
-      image: '/icons/editdor.png',
+      image: `${process.env.BASE_PATH || ''}/icons/editdor.png`,
       status: statuses.editdor,
       handleOnClick: () => {
         if (!TM) return;
@@ -155,7 +155,7 @@ const OpenWithModal: React.FC<OpenWithModalProps> = ({ open, TM, onClose }) => {
     {
       name: 'TD Playground',
       url: PLAYGROUND_URL,
-      image: '/icons/playground.png',
+      image: `${process.env.BASE_PATH || ''}/icons/playground.png`,
       status: statuses.playground,
       handleOnClick: () => {
         if (!TM) return;

@@ -14,7 +14,7 @@ export async function fetchLocalDataInventory(signal?: AbortSignal): Promise<Inv
   );
   const filename = normalizeRelativePathSegment(INVENTORY_FILENAME);
 
-  const basePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/`;
+  const basePath = `${process.env.BASE_PATH || ''}/`;
   const url = new URL(`${basePath}${folder}${filename}`, window.location.origin);
 
   const res = await fetch(url.toString(), { signal });
@@ -46,7 +46,7 @@ export async function fetchDataFromTxT(baseUrl: string, textFilename: string): P
   );
   const filename = normalizeRelativePathSegment(textFilename);
 
-  const basePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/`;
+  const basePath = `${process.env.BASE_PATH || ''}/`;
   const url = new URL(`${basePath}${folder}${filename}`, baseUrl);
 
   const res = await fetch(url.toString());
@@ -72,7 +72,7 @@ export async function fetchDataFromTxT(baseUrl: string, textFilename: string): P
 export async function fetchLocalThingModel(fullpath: string): Promise<DetailedInventoryItem> {
   isDevelopment && console.warn('Fetching local Thing Model from path:', fullpath);
 
-  const basePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/`;
+  const basePath = `${process.env.BASE_PATH || ''}/`;
   const urlBase = `${basePath}${CATALOG_ROOT_FOLDER}/${normalizeRelativePathSegment(fullpath)}`;
   isDevelopment && console.warn('Computed URL base for Thing Model:', urlBase);
   const url = new URL(`${urlBase}`, window.location.origin);
