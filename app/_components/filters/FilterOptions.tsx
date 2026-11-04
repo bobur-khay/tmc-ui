@@ -1,4 +1,4 @@
-import type { FilterKey, FilterData } from '../types';
+import type { FilterKey, FilterData } from '../data-controls/types';
 
 interface FilterOptionsProps {
   sectionId: FilterKey;

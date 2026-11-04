@@ -16,7 +16,6 @@ export function useFilters() {
   const { authorizationHeader } = useAuth();
   /* Filters */
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  console.log(filters);
   const availableFilters = useRef<Filters>(EMPTY_FILTERS);
   const getCheckedFilterOptions = useCallback((filters: Filters) => {
     const checkedFilterOptions = {} as CheckedFilterOptions;
