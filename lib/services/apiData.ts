@@ -1,5 +1,6 @@
 import { type DetailedInventoryItem } from '@/app/_components/inventory/types';
 import { INVENTORY_TIMEOUT_MS, INVENTORY_ENDPOINT, THING_MODEL_ENDPOINT } from '../utils/constants';
+import { debug } from '../utils/debug';
 
 interface FetchInventoryOptions {
   readonly signal?: AbortSignal;
@@ -84,6 +85,12 @@ export async function fetchApiDataInventory(
   page?: number,
   pageSize?: number,
 ): Promise<InventoryResponse> {
+  debug('Fetching API data for inventory:', {
+    baseUrl,
+    options,
+    page,
+    pageSize,
+  });
   if (!baseUrl) {
     throw new Response('Catalog URL not configured', { status: 400 });
   }
@@ -126,11 +133,14 @@ export async function fetchApiDataInventory(
       };
     }
 
+    debug('Invalid inventory response:', json);
     return {
       data: [],
       meta: { lastUpdated: '', page: { pageNumber: 0, pageSize: 0, totalElements: 0 } },
     };
   } catch (err: unknown) {
+    // TODO: is not displayed in the UI
+    console.error('Error fetching inventory:', err);
     if (err instanceof DOMException && err.name === 'AbortError') {
       if (didTimeout) {
         throw new Response('Inventory request timed out', { status: 504 });

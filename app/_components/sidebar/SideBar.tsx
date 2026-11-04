@@ -1,10 +1,10 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { MinusIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
-import { FilterOptions } from './FilterOptions';
 import Button from '../base/Button';
 import { capitalize } from '@/lib/utils/strings';
-import type { FilterKey, Filters } from '../filters/types';
+import type { FilterKey, Filters } from '../data-controls/types';
+import { FilterOptions } from '../filters/FilterOptions';
 
 interface SideBarProps {
   filters: Filters;

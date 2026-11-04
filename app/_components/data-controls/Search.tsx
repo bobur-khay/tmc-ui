@@ -1,19 +1,18 @@
 import { ArrowPathIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/20/solid';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import Input from '../base/Input';
 
 export type SearchProgress = 0 | 80 | 100;
 
 interface SearchProps {
   query: string;
-  setQuery: (query: string) => void;
   progressState: SearchProgress;
-  setProgressState: (progressState: SearchProgress) => void;
+  onSearch: (query: string) => void;
 }
 
 const TO_EIGHTY_DURATION_MS = 3000;
-const TO_HUNDRED_DURATION_MS = 200;
-const FADE_OUT_DURATION_MS = 200;
+export const TO_HUNDRED_DURATION_MS = 200;
+export const FADE_OUT_DURATION_MS = 200;
 
 const progressToDurationMap: Record<SearchProgress, number> = {
   0: 0,
@@ -21,22 +20,9 @@ const progressToDurationMap: Record<SearchProgress, number> = {
   100: TO_HUNDRED_DURATION_MS,
 };
 
-export function Search({ query, setQuery, progressState, setProgressState }: SearchProps) {
+export function Search({ query, progressState, onSearch }: SearchProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const loading = progressState > 0 && progressState < 100;
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  useEffect(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (progressState === 100) {
-      timeoutRef.current = setTimeout(
-        () => setProgressState(0),
-        TO_HUNDRED_DURATION_MS + FADE_OUT_DURATION_MS,
-      );
-    }
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [progressState, setProgressState]);
 
   return (
     <>
@@ -49,7 +35,7 @@ export function Search({ query, setQuery, progressState, setProgressState }: Sea
           className="h-12 pr-10 pl-11 text-base sm:text-sm"
           placeholder="Search..."
           onChange={async (e) => {
-            setQuery(e.target.value);
+            onSearch(e.target.value);
           }}
           aria-label="Search inventory"
         />
@@ -71,7 +57,7 @@ export function Search({ query, setQuery, progressState, setProgressState }: Sea
             type="button"
             aria-label="Clear search"
             onClick={() => {
-              setQuery('');
+              onSearch('');
               requestAnimationFrame(() => inputRef.current?.focus());
             }}
             className="text-interactive-support hover:bg-interactive-support hover:text-text-primary absolute top-1/2 right-2 -translate-y-1/2 rounded p-1"

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import AuthenticationGuard from './_components/auth/AuthenticationGuard';
+import { InventoryProvider } from './_components/inventory/InventoryProvider';
 
 // Fonts
 const geistSans = Geist({
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="flex min-h-full flex-col">
         <AuthenticationGuard serverUrl={serverUrl} tokenUrl={tokenUrl}>
-          {children}
+          <InventoryProvider>{children}</InventoryProvider>
         </AuthenticationGuard>
       </body>
     </html>

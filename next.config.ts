@@ -6,6 +6,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const isStaticExport = !isDevelopment && process.env.IS_STATIC === 'true';
 const useApiProxy = isDevelopment && !!TMC_SERVER_URL;
 const nextConfig: NextConfig = {
+  reactStrictMode: false, // TODO: remove
   basePath: BASE_PATH,
   trailingSlash: isStaticExport,
   images: { unoptimized: isStaticExport },

@@ -48,7 +48,12 @@ export function InventoryResults({
   loading: boolean;
   view?: 'grid' | 'list';
 }) {
-  if (loading && items.length === 0) return <Loader text="Loading catalog..." />;
+  if (loading && items.length === 0)
+    return (
+      <div className="mt-36">
+        <Loader />
+      </div>
+    );
 
   const getLatestTmID = (versions: Version[]): string | undefined => {
     return versions.reduce<Version | undefined>((latest, current) => {

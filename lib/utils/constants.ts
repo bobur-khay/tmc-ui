@@ -1,4 +1,4 @@
-import { type FilterData } from '@/app/_components/filters/types';
+import { type FilterData } from '@/app/_components/data-controls/types';
 
 export const INVENTORY_ENDPOINT = 'inventory';
 

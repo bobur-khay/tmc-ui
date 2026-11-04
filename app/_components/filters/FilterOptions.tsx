@@ -1,4 +1,4 @@
-import type { FilterKey, FilterData } from '../filters/types';
+import type { FilterKey, FilterData } from '../types';
 
 interface FilterOptionsProps {
   sectionId: FilterKey;

@@ -22,7 +22,7 @@ const getLocalStorage = (key: string): string | null => {
  * Sets a value in the local storage
  * @throws if called not on client
  */
-const setLocalStorage = (value: string, key: string): void => {
+const setLocalStorage = (key: string, value: string): void => {
   if (typeof window === 'undefined') {
     throw new Error("Can't access local storage on the server");
   }

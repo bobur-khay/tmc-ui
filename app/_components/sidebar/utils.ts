@@ -13,7 +13,7 @@ import type {
   FilterOptionParam,
   FilterData,
   FilterOptionsFetchFunctionParams,
-} from '../filters/types';
+} from '../data-controls/types';
 
 export async function getAvailableFilterOptionsClient(): Promise<Filters> {
   const filterOptionParams: Record<FilterKey, FilterOptionParam> = {

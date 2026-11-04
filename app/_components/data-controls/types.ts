@@ -26,7 +26,15 @@ export interface FilterOptionsFetchFunctionParams {
   transform?: (res: any) => string[];
 }
 
-export type ApplyFiltersParams = {
-  isInitialLoad?: boolean;
-  isReset?: boolean;
+export interface DataControls {
+  filters: Filters;
+  search: string;
+  pageNumber: number;
+  pageSize: number;
+}
+export type NextDataControls = Partial<DataControls>;
+export type DataControlType = keyof DataControls;
+
+export type ApplyDataControlsParams = {
+  nextDataControls: NextDataControls;
 };
