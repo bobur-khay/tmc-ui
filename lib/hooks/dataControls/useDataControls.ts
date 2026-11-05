@@ -38,7 +38,6 @@ export function useDataControls({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   /* Search */
-  // TODO: use timeoutRef for debouncing filter application
   const { searchProgress, setSearchProgress, searchQuery, setSearchQuery } = useSearch();
 
   /* Pagination */
@@ -260,33 +259,34 @@ export function useDataControls({
 
   useEffect(() => {
     debug('Starting initial load');
-    debug('Application of filters was unblocked');
 
     /* View Preference */
     try {
       const storedView = getLocalStorage(INVENTORY_VIEW_KEY);
       if (storedView === 'grid' || storedView === 'list') {
+        debug(`Setting view preference to "${storedView}"`);
         setInventoryView(storedView);
       }
-      debug(`Setting view preference to "${storedView}"`);
     } catch (error) {
       console.warn('Could not restore the results view preference', error);
     }
 
     /* Page Size Preference */
+    let pageSize = DEFAULT_PAGE_SIZE;
     try {
       const storedPageSize = Number(getLocalStorage(INVENTORY_PAGE_SIZE_KEY));
       if (PAGE_SIZE_OPTIONS.includes(storedPageSize)) {
         setPageSize(storedPageSize); // triggers application of filters
+        pageSize = storedPageSize;
         debug('Setting page size preference to', storedPageSize);
-        void (async () => {
-          await applyDataControls({ nextDataControls: { pageSize: storedPageSize } });
-        })();
       }
     } catch (error) {
       setPageSize(DEFAULT_PAGE_SIZE); // triggers application of filters
       console.warn('Could not restore the page size preference', error);
     }
+
+    /* Load inventory */
+    void applyDataControls({ nextDataControls: { pageSize } });
 
     /* Load available filters */
     void loadAvailableFilters(abortSignalRef.current.signal).catch((err: unknown) => {

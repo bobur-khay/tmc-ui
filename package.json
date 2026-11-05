@@ -16,6 +16,7 @@
   "scripts": {
     "dev": "next dev -p 5173",
     "build": "next build",
+    "start": "next start",
     "test": "vitest",
     "test:integration": "vitest src/tests/integration",
     "test:integration:static": "vitest src/tests/integration/static",
