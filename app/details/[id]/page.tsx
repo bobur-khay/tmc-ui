@@ -44,7 +44,7 @@ export default function Details() {
   const imageTitle = TM?.title || TM?.name || TM?.tmName || 'Product image';
 
   const navigateBack = () => {
-    router.push('/');
+    router.push('/', { scroll: false });
   };
 
   // Load Thing Model

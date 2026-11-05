@@ -4,6 +4,7 @@ import { Card } from './Card';
 import Link from 'next/link';
 import type { Attachment, InventoryItem, Version } from './types';
 import { CATALOG_ROOT_FOLDER } from '@/lib/utils/constants';
+import { useInventoryContext } from './InventoryProvider';
 
 const DEFAULT_IMAGE_SRC = `${process.env.BASE_PATH || ''}/default-image.png`;
 
@@ -48,6 +49,7 @@ export function InventoryResults({
   loading: boolean;
   view?: 'grid' | 'list';
 }) {
+  const { lastOpenedTM } = useInventoryContext();
   if (loading && items.length === 0)
     return (
       <div className="mt-36">
@@ -93,7 +95,14 @@ export function InventoryResults({
           const versionCount = itemTM.versions?.length ?? 0;
 
           return (
-            <li key={key} className={CARD_CLASS_NAME}>
+            <li
+              key={key}
+              className={CARD_CLASS_NAME}
+              id={key}
+              onClick={() => {
+                lastOpenedTM.current = key;
+              }}
+            >
               <Link
                 className="block h-full"
                 href={`/details/${encodeURIComponent(getLatestTmID(itemTM.versions ?? []) ?? '')}`}

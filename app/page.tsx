@@ -1,5 +1,5 @@
 'use client';
-import { useLayoutEffect } from 'react';
+import { useEffect } from 'react';
 import { useInventoryContext } from './_components/inventory/InventoryProvider';
 import Dropdown from './_components/base/Dropdown';
 import Button from './_components/base/Button';
@@ -42,26 +42,19 @@ export default function InventoryLoad() {
     pageSize,
     totalPages,
     paginatedItems,
-    scrollPosition,
+    lastOpenedTM,
   } = useInventoryContext();
 
-  useLayoutEffect(() => {
-    const saveScrollPosition = () => {
-      scrollPosition.current = { left: window.scrollX, top: window.scrollY };
-    };
-
-    const frame = window.requestAnimationFrame(() => {
-      if (scrollPosition.current) {
-        window.scrollTo({ ...scrollPosition.current, behavior: 'instant' });
-      }
-      window.addEventListener('scroll', saveScrollPosition, { passive: true });
+  useEffect(() => {
+    if (isInventoryLoading || !lastOpenedTM.current) return;
+    const element = document.getElementById(lastOpenedTM.current);
+    // Defer until after Next.js' route scroll handling has run.
+    const frame = requestAnimationFrame(() => {
+      element?.scrollIntoView({ behavior: 'instant', block: 'center' });
+      element?.querySelector<HTMLAnchorElement>('a')?.focus({ preventScroll: true });
     });
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', saveScrollPosition);
-    };
-  }, [scrollPosition]);
+    return () => cancelAnimationFrame(frame);
+  }, [isInventoryLoading, lastOpenedTM]);
 
   return (
     <div className="bg-surface-canvas min-h-dvh py-10">

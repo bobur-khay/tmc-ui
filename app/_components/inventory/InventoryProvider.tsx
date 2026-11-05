@@ -4,17 +4,17 @@ import { createContext, useContext, useRef, type ReactNode, type RefObject } fro
 import { useInventory } from '@/lib/hooks/useInventory';
 
 type InventoryContextValue = ReturnType<typeof useInventory> & {
-  scrollPosition: RefObject<{ left: number; top: number } | null>;
+  lastOpenedTM: RefObject<string | null>;
 };
 
 const InventoryContext = createContext<InventoryContextValue | undefined>(undefined);
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const inventory = useInventory();
-  const scrollPosition = useRef<{ left: number; top: number } | null>(null);
+  const lastOpenedTM = useRef<string | null>(null);
 
   return (
-    <InventoryContext.Provider value={{ ...inventory, scrollPosition }}>
+    <InventoryContext.Provider value={{ ...inventory, lastOpenedTM }}>
       {children}
     </InventoryContext.Provider>
   );
