@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { InventoryItem } from '@/app/_components/inventory/types';
 import { fetchApiDataInventory } from '@/lib/services/apiData';
 import { INVENTORY_FILENAME, REPOSITORY_CATALOG_DEFAULT_FOLDER } from '@/lib/utils/constants';
+import { encodeDetailsId } from '@/lib/utils/details';
 
 export async function generateStaticParams(): Promise<{ id: string }[]> {
   if (process.env.IS_STATIC !== 'true') return [];
@@ -34,7 +35,7 @@ export async function generateStaticParams(): Promise<{ id: string }[]> {
   }
 
   const ids = inventory.flatMap((item) => item.versions?.map((version) => version.tmID) ?? []);
-  return Array.from(new Set(ids)).map((id) => ({ id }));
+  return Array.from(new Set(ids)).map((id) => ({ id: encodeDetailsId(id) }));
 }
 
 export default function DetailsLayout({ children }: { children: ReactNode }) {

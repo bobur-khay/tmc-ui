@@ -4,6 +4,7 @@ import { Card } from './Card';
 import Link from 'next/link';
 import type { Attachment, InventoryItem, Version } from './types';
 import { CATALOG_ROOT_FOLDER } from '@/lib/utils/constants';
+import { buildDetailsPath } from '@/lib/utils/details';
 import { useInventoryContext } from './InventoryProvider';
 
 const DEFAULT_IMAGE_SRC = `${process.env.BASE_PATH || ''}/default-image.png`;
@@ -105,7 +106,7 @@ export function InventoryResults({
             >
               <Link
                 className="block h-full"
-                href={`/details/${encodeURIComponent(getLatestTmID(itemTM.versions ?? []) ?? '')}`}
+                href={buildDetailsPath(getLatestTmID(itemTM.versions ?? []) ?? '')}
               >
                 <Card
                   view={view}

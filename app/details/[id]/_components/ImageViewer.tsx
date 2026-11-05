@@ -3,6 +3,7 @@
 import Button from '@/app/_components/base/Button';
 import { buildItemImageSrc } from '@/app/_components/inventory/InventoryResults';
 import type { DetailedInventoryItem } from '@/app/_components/inventory/types';
+import { buildDetailsPath } from '@/lib/utils/details';
 import { ArrowDownTrayIcon, ShareIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
 import ShareModal from './ShareModal';
@@ -59,7 +60,7 @@ export default function ImageViewer({
           onClick={() =>
             setShareUrl(
               new URL(
-                `${process.env.BASE_PATH || ''}/details/${encodeURIComponent(id)}/image`,
+                `${process.env.BASE_PATH || ''}${buildDetailsPath(id, true)}`,
                 window.location.origin,
               ).href,
             )

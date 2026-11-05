@@ -33,6 +33,8 @@ available in the Actions tab.
 The workflow uses npm and enables static export with the base path supplied by
 GitHub Pages. It preserves `next.config.ts` instead of injecting another config.
 Static routes use directory-style URLs so direct links work on Pages.
+Detail route IDs use URL-safe Base64 in static builds so model IDs containing
+slashes resolve on static hosts. Rebuild and redeploy to update existing links.
 
 Configure these optional repository Actions variables:
 

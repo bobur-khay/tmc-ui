@@ -22,11 +22,12 @@ import { buildItemImageSrc } from '@/app/_components/inventory/InventoryResults'
 import Button from '@/app/_components/base/Button';
 import { TmJsonModal } from './_components/TmJsonModal';
 import ShareModal from './_components/ShareModal';
+import { buildDetailsPath, decodeDetailsId } from '@/lib/utils/details';
 
 // TODO: create a loading component that shows the loader only after 1-2 seconds to avoid UI flash
 export default function Details() {
   const { id: paramId } = useParams<{ id: string }>();
-  const id = decodeURIComponent(paramId);
+  const id = decodeDetailsId(paramId);
 
   const { authorizationHeader } = useAuth();
   const router = useRouter();
@@ -51,6 +52,7 @@ export default function Details() {
   useEffect(() => {
     void (async () => {
       setError(null);
+      setLoading(true);
       try {
         let data: DetailedInventoryItem | null = null;
 
@@ -76,8 +78,7 @@ export default function Details() {
         setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [id, authorizationHeader]);
 
   const dropdownData: { key: string; value: string }[] =
     TM?.versions?.map((version) => {
@@ -158,7 +159,7 @@ export default function Details() {
         <div className="grid min-w-0 gap-8 md:grid-cols-[18rem_minmax(0,1fr)] lg:gap-12">
           <aside className="min-w-0">
             <Link
-              href={`/details/${encodeURIComponent(id)}/image`}
+              href={buildDetailsPath(id, true)}
               aria-label={`Open image of ${imageTitle} in fullscreen`}
               title="View fullscreen"
               className="bg-media focus-visible:outline-focus-ring relative block w-full cursor-pointer overflow-hidden rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -191,7 +192,7 @@ export default function Details() {
                   options={dropdownData}
                   value={TM?.id ?? ''}
                   onChange={(value) => {
-                    router.replace(`/details/${encodeURIComponent(value ?? '')}`);
+                    router.replace(buildDetailsPath(value ?? ''));
                   }}
                   showChevron={true}
                   wrapperClassName="w-full"

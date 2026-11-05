@@ -6,18 +6,19 @@ import type { DetailedInventoryItem } from '@/app/_components/inventory/types';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { fetchTmContentFromServer } from '@/lib/services/apiData';
 import { fetchLocalDataInventory, fetchLocalThingModel } from '@/lib/services/localData';
+import { buildDetailsPath, decodeDetailsId } from '@/lib/utils/details';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ImageViewer from '../_components/ImageViewer';
 
 export default function ImagePage() {
   const { id: paramId } = useParams<{ id: string }>();
-  const id = decodeURIComponent(paramId);
+  const id = decodeDetailsId(paramId);
   const router = useRouter();
   const { authorizationHeader } = useAuth();
   const [model, setModel] = useState<DetailedInventoryItem | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const detailsPath = `/details/${encodeURIComponent(id)}`;
+  const detailsPath = buildDetailsPath(id);
 
   useEffect(() => {
     const controller = new AbortController();
