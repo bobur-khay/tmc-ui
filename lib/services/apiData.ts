@@ -87,7 +87,10 @@ export async function fetchApiDataInventory(
 ): Promise<InventoryResponse> {
   debug('Fetching API data for inventory:', {
     baseUrl,
-    options,
+    options: {
+      ...options,
+      authorizationHeader: options.authorizationHeader?"******":undefined,
+    },
     page,
     pageSize,
   });
@@ -114,7 +117,8 @@ export async function fetchApiDataInventory(
     });
 
     if (!res.ok) {
-      throw new Response('Failed to fetch inventory', { status: res.status });
+      const message = (await res.text().catch(() => '')).trim() || 'Failed to fetch inventory';
+      throw new Response(message, { status: res.status });
     }
 
     const json: unknown = await res.json();
@@ -140,7 +144,12 @@ export async function fetchApiDataInventory(
     };
   } catch (err: unknown) {
     // TODO: is not displayed in the UI
-    console.error('Error fetching inventory:', err);
+    if (err instanceof Response) {
+      const message = await err.clone().text().catch(() => 'Failed to fetch inventory');
+      console.error(`Error fetching inventory (${err.status}): ${message}`);
+    } else {
+      console.error('Error fetching inventory:', err instanceof Error ? err.message : err);
+    }
     if (err instanceof DOMException && err.name === 'AbortError') {
       if (didTimeout) {
         throw new Response('Inventory request timed out', { status: 504 });

@@ -12,11 +12,12 @@ import { fetchLocalDataInventory } from '../../services/localData';
 import { useSearch } from '../search/useSearch';
 import { useAuth } from '../useAuth';
 import { debug } from '@/lib/utils/debug';
-import { DEFAULT_PAGE_SIZE, usePagination } from '../pagination/usePagination';
+import {  usePagination } from '../pagination/usePagination';
 import { getLocalStorage } from '@/lib/utils/storage';
 import { INVENTORY_PAGE_SIZE_KEY, INVENTORY_VIEW_KEY } from '@/lib/utils/constants';
 import { PAGE_SIZE_OPTIONS } from '../useInventory';
 import { useFilters } from '../filters/useFilters';
+import { DEFAULT_PAGE_SIZE } from '../pagination/paginationTypes';
 
 const DATA_CONTROLS_DEBOUNCE_MS = 800;
 

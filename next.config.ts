@@ -32,8 +32,6 @@ const nextConfig: NextConfig = {
     API_BASE: useApiProxy ? '/__tmc_api__' : TMC_SERVER_URL || '/',
     CATALOG_REPO_URLS: process.env.CATALOG_REPO_URLS ?? process.env.CATALOG_REPO_URL,
     DEBUG: process.env.DEBUG,
-    CLIENT_ID: process.env.CLIENT_ID,
-    CLIENT_SECRET: process.env.CLIENT_SECRET,
   },
 
   ...(useApiProxy

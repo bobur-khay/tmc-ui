@@ -6,6 +6,7 @@ import { fetchApiDataInventory } from '@/lib/services/apiData';
 import { requestClientCredentialsToken } from '@/lib/services/auth';
 import { INVENTORY_FILENAME, REPOSITORY_CATALOG_DEFAULT_FOLDER } from '@/lib/utils/constants';
 import { encodeDetailsId } from '@/lib/utils/details';
+import { DEFAULT_PAGE_SIZE } from '@/lib/hooks/pagination/paginationTypes';
 
 export async function generateStaticParams(): Promise<{ id: string }[]> {
   if (process.env.IS_STATIC !== 'true') return [];
@@ -33,21 +34,10 @@ export async function generateStaticParams(): Promise<{ id: string }[]> {
       authorizationHeader = `Bearer ${token.accessToken}`;
     }
 
-    inventory = [];
-    let page = 0;
-
-    while (true) {
-      const response = await fetchApiDataInventory(
-        process.env.TMC_SERVER_URL,
-        { authorizationHeader },
-        page,
-        100,
-      );
-      const items = response.data as InventoryItem[];
-      inventory.push(...items);
-      if (items.length === 0 || inventory.length >= response.meta.page.totalElements) break;
-      page += 1;
-    }
+    const response = await fetchApiDataInventory(process.env.TMC_SERVER_URL, {
+      authorizationHeader,
+    });
+    inventory = response.data as InventoryItem[];
   } else {
     const catalogPath = path.join(
       process.cwd(),
@@ -60,8 +50,18 @@ export async function generateStaticParams(): Promise<{ id: string }[]> {
     inventory = catalog.data;
   }
 
-  const ids = inventory.flatMap((item) => item.versions?.map((version) => version.tmID) ?? []);
-  return Array.from(new Set(ids)).map((id) => ({ id: encodeDetailsId(id) }));
+  const ids = new Set<string>();
+
+  for (let offset = 0; offset < inventory.length; offset += DEFAULT_PAGE_SIZE) {
+    const page = inventory.slice(offset, offset + DEFAULT_PAGE_SIZE);
+    for (const item of page) {
+      for (const version of item.versions ?? []) {
+        ids.add(version.tmID);
+      }
+    }
+  }
+
+  return Array.from(ids).map((id) => ({ id: encodeDetailsId(id) }));
 }
 
 export default function DetailsLayout({ children }: { children: ReactNode }) {

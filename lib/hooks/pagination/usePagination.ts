@@ -1,8 +1,7 @@
 import type { InventoryItem } from '@/app/_components/inventory/types';
 import { useState, useMemo } from 'react';
-import { type PaginationProps } from './paginationTypes';
+import {  DEFAULT_PAGE_SIZE, type PaginationProps } from './paginationTypes';
 
-export const DEFAULT_PAGE_SIZE = 20;
 
 export function usePagination({
   totalFilteredInventoryCount,
@@ -23,3 +22,4 @@ export function usePagination({
 
   return { pageNumber, setPageNumber, pageSize, setPageSize, totalPages, paginatedItems };
 }
+
