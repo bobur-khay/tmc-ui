@@ -97,6 +97,12 @@ LOCAL=true
 
 TMC UI uses the OAuth 2.0 client credentials flow when `TOKEN_URL` is configured.
 
+For static builds (`IS_STATIC=true`) with `TMC_SERVER_URL` and `TOKEN_URL` configured,
+set server-only `CLIENT_ID` and `CLIENT_SECRET` environment variables. Static route
+generation uses the same token request as browser authentication and sends the
+resulting Bearer token with every inventory request. Do not expose these credentials
+through client-side environment configuration or commit them to source control.
+
 ```dotenv
 SERVER_AVAILABLE=true
 SERVER_URL=http://localhost:8080
@@ -181,8 +187,17 @@ The script:
 
 The scripts under `ci-cd/` can also be used independently:
 
+- `npm run catalogs:download` reads a comma-separated `CATALOG_REPO_URLS` from the environment or the root `.env` file. It downloads each catalog into its own stable, URL-derived subdirectory under the repository-root `catalog-repos/` folder. Missing Git repositories are cloned with their metadata retained; existing repositories are updated with `git pull --ff-only`. Older downloads without `.git` must be moved outside `catalog-repos/` before rerunning to clone them again. S3 catalogs use `aws s3 sync` on every run. Failed downloads are cleaned up. This standalone command does not change the deployment flow above.
 - `ci-cd/fetchRepository.sh <repository-url> <destination>` performs a shallow clone and removes repository metadata before the files are copied into the deployment workspace.
 - `ci-cd/validateRequiredFiles.sh <catalog-directory>` validates the static catalog contract.
+
+For example, set this in `.env`, then run `npm run catalogs:download`:
+
+```dotenv
+CATALOG_REPO_URLS=https://github.com/wot-oss/example-catalog.git,https://gitlab.com/your-org/catalog.git,s3://your-bucket/catalog-prefix/
+```
+
+GitHub and GitLab sources must be cloneable repository URLs and require Git on `PATH`; private repositories use your configured Git credentials. S3 sources support `s3://bucket/prefix/` and standard AWS S3 HTTPS bucket/prefix URLs, and require the AWS CLI on `PATH` with credentials and region configured (for example via `aws configure` or standard AWS environment variables). Presigned object URLs are not supported. The command requires Node.js 22.20 or newer and does not install these tools.
 
 For a complete local setup that checks Node.js and Yarn, prepares the deployment, installs dependencies, builds, and starts Vite preview, run:
 

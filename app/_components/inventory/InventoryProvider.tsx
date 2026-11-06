@@ -12,7 +12,6 @@ const InventoryContext = createContext<InventoryContextValue | undefined>(undefi
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const inventory = useInventory();
   const lastOpenedTM = useRef<string | null>(null);
-
   return (
     <InventoryContext.Provider value={{ ...inventory, lastOpenedTM }}>
       {children}

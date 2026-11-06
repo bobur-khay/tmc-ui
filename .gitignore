@@ -13,6 +13,7 @@ next-env.d.ts
 dist
 /out
 /catalog
+/catalogs
 
 .yarn
 /docs

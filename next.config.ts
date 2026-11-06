@@ -30,7 +30,10 @@ const nextConfig: NextConfig = {
     API_PORT: process.env.API_PORT ?? process.env.VITE_API_PORT,
     API_PROTOCOL: process.env.API_PROTOCOL ?? process.env.VITE_API_PROTOCOL,
     API_BASE: useApiProxy ? '/__tmc_api__' : TMC_SERVER_URL || '/',
+    CATALOG_REPO_URLS: process.env.CATALOG_REPO_URLS ?? process.env.CATALOG_REPO_URL,
     DEBUG: process.env.DEBUG,
+    CLIENT_ID: process.env.CLIENT_ID,
+    CLIENT_SECRET: process.env.CLIENT_SECRET,
   },
 
   ...(useApiProxy
