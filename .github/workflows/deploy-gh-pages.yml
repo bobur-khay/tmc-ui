@@ -4,6 +4,8 @@ on:
   # Runs on pushes targeting the migration branch
   push:
     branches: ['refactor/migration-to-nextjs']
+  pull_request:
+    branches: ['refactor/migration-to-nextjs']
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
