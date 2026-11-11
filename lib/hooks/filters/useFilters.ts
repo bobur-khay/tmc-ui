@@ -34,7 +34,7 @@ export function useFilters() {
   );
 
   const loadAvailableFilters = async (signal: AbortSignal) => {
-    let filterOptionResults: Filters;
+    let filterOptionResults: Omit<Filters, 'changedSince'>;
 
     if (process.env.TMC_SERVER_URL) {
       filterOptionResults = await getAvailableFilterOptionsServer(
@@ -46,9 +46,10 @@ export function useFilters() {
     }
 
     if (signal.aborted) return;
-    availableFilters.current = filterOptionResults;
+    const loadedFilters: Filters = { ...EMPTY_FILTERS, ...filterOptionResults };
+    availableFilters.current = loadedFilters;
     debug('Setting available filters');
-    setFilters(filterOptionResults);
+    setFilters(loadedFilters);
   };
 
   return {
