@@ -13,7 +13,7 @@
   },
   "private": true,
   "type": "module",
-  "packageManager": "yarn@1.22.22",
+  "packageManager": "pnpm@12.18.0",
   "scripts": {
     "dev": "next dev -p 5173",
     "build": "next build",
@@ -25,10 +25,10 @@
     "test:integration:backend-no-auth": "vitest src/tests/integration/backend-no-auth",
     "test:integration:backend-with-auth": "vitest src/tests/integration/backend-with-auth",
     "test:coverage": "vitest run --coverage",
-    "clean": "rm -rf node_modules dist build && npm install && npm build",
+    "clean": "rm -rf node_modules dist build && pnpm install --frozen-lockfile && pnpm run build",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "setup:local": "npm install && npm run build && npm run start"
+    "setup:local": "pnpm install --frozen-lockfile && pnpm run build && pnpm run start"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

@@ -5,7 +5,7 @@ set -eu
 MIN_NODE_MAJOR=22
 MIN_NODE_MINOR=20
 MIN_NODE_PATCH=0
-YARN_VERSION=1.22.22
+PNPM_VERSION=12.18.0
 
 log_info() {
 	echo "[INFO] $*"
@@ -55,22 +55,22 @@ valide_node_installation() {
 	log_info "Using Node.js ${node_version}"
 }
 
-valide_yarn_installation() {
-	if command -v yarn >/dev/null 2>&1; then
-		log_info "Yarn is already installed ($(yarn -v))"
+valide_pnpm_installation() {
+	if command -v pnpm >/dev/null 2>&1 && [ "$(pnpm -v)" = "$PNPM_VERSION" ]; then
+		log_info "Using pnpm ${PNPM_VERSION}"
 		return
 	fi
-	log_error "Could not find Yarn installation. Please install Yarn ${YARN_VERSION} or use Corepack to manage it, and run this script again."
+	log_error "This project requires pnpm ${PNPM_VERSION}. Run npm install --global pnpm@${PNPM_VERSION}, or enable Corepack, and run this script again."
 	exit 1
 }
 
 main() {
 	valide_node_installation
-	valide_yarn_installation
+	valide_pnpm_installation
 	run_or_exit sh deploy.sh
 
 	log_info "Installing dependencies"
-	run_or_exit yarn setup:local
+	run_or_exit pnpm run setup:local
 
 	log_info "Starting development server"
 }

@@ -8,7 +8,7 @@
 Set `TMC_SERVER_URL` in the root `.env` file to the backend's HTTP(S) base URL.
 `VITE_SERVER_URL` is supported as a legacy fallback.
 
-- With a backend configured, `yarn dev` sets `API_BASE` to `/__tmc_api__`.
+- With a backend configured, `pnpm dev` sets `API_BASE` to `/__tmc_api__`.
   Next.js rewrites `/__tmc_api__/:path*` to the backend URL plus the requested
   path, keeping browser API requests on the UI origin.
 - Production builds use the backend URL directly. The backend must allow
@@ -30,8 +30,8 @@ Configure `CATALOG_REPO_URLS` in the root `.env` as a comma-separated list of Gi
 or S3 catalog URLs, then run:
 
 ```sh
-npm run download-catalog
-npm run dev
+pnpm run download-catalog
+pnpm run dev
 ```
 
 The downloader stores each repository under `public/catalog-repos/<repo>/` and
@@ -41,7 +41,7 @@ their source repository. Search, author/manufacturer/repository filters, and
 pagination run locally. Protocol filtering is unavailable because the catalog
 index does not contain per-model protocols.
 
-For static hosting, set `IS_STATIC=true` and run `npm run build`. Set `BASE_PATH`
+For static hosting, set `IS_STATIC=true` and run `pnpm run build`. Set `BASE_PATH`
 when deploying below the host root. Detail and image routes are generated for
 every repository/version pair; repository-qualified IDs keep duplicate models
 from different sources independently addressable. Rebuild after catalog changes.
@@ -53,7 +53,7 @@ Select **GitHub Actions** as the Pages source in repository settings. Allow
 workflow runs on pushes to that branch or can be dispatched manually when
 available in the Actions tab.
 
-The workflow uses npm and enables static export with the base path supplied by
+The workflow uses pnpm and enables static export with the base path supplied by
 GitHub Pages. It preserves `next.config.ts` instead of injecting another config.
 Static routes use directory-style URLs so direct links work on Pages.
 Detail route IDs use URL-safe Base64 in static builds so model IDs containing
@@ -63,7 +63,7 @@ Configure these optional repository Actions variables:
 
 - `CATALOG_REPO_URLS`: comma-separated catalog Git or S3 URLs; falls back to
   `CATALOG_REPO_URL`, then `https://github.com/wot-oss/example-catalog.git`.
-  CI runs `npm run download-catalog` to prepare `public/catalog-repos/` and its
+  CI runs `pnpm run download-catalog` to prepare `public/catalog-repos/` and its
   merged index for route generation and publishing. Private S3 sources require
   AWS credentials in the workflow environment.
 - `TMC_SERVER_URL`: public HTTPS backend URL. When set, CI skips the local
@@ -95,8 +95,18 @@ Use this path when you want to run the UI against an existing TMC backend, with 
 
 - Git
 - Node.js 22.20.0 or later
-- Yarn 1.22.22
+- pnpm 12.18.0 (pinned in `package.json`)
 - A running [TMC instance](https://github.com/wot-oss/tmc) with at least one configured [Thing Model catalog](https://github.com/wot-oss/example-catalog)
+
+Install the pinned package manager:
+
+```sh
+npm install --global pnpm@12.18.0
+```
+
+Alternatively, with an up-to-date Corepack installation, run `corepack enable`.
+Corepack reads the `packageManager` field to select the project's pnpm version.
+Commit `pnpm-lock.yaml` when dependencies change; CI uses `pnpm install --frozen-lockfile`.
 
 ### Clone and start
 
@@ -137,9 +147,9 @@ LOCAL=true
 Install the dependencies, prepare the deployment, and start the development server:
 
 ```sh
-yarn install
+pnpm install --frozen-lockfile
 sh deploy.sh
-yarn dev
+pnpm dev
 ```
 
 Open the URL printed by Vite. When authentication is enabled, enter the client ID and client secret on the setup screen. Credentials are stored only for the current browser tab, and the access token is kept in memory.
@@ -212,7 +222,7 @@ The script:
 
 The scripts under `ci-cd/` can also be used independently:
 
-- `npm run download-catalog` reads a comma-separated `CATALOG_REPO_URLS` from the environment or the root `.env` file. It downloads each catalog into its own stable, URL-derived subdirectory under `public/catalog-repos/`. Missing Git repositories are cloned with their metadata retained; existing repositories are updated with `git pull --ff-only`. Older downloads without `.git` must be moved outside `public/catalog-repos/` before rerunning to clone them again. S3 catalogs use `aws s3 sync` on every run, with `--delete` for existing downloads to remove files deleted upstream. Failed downloads are cleaned up. The Next.js Pages workflow uses this command; the legacy deployment scripts above are separate.
+- `pnpm run download-catalog` reads a comma-separated `CATALOG_REPO_URLS` from the environment or the root `.env` file. It downloads each catalog into its own stable, URL-derived subdirectory under `public/catalog-repos/`. Missing Git repositories are cloned with their metadata retained; existing repositories are updated with `git pull --ff-only`. Older downloads without `.git` must be moved outside `public/catalog-repos/` before rerunning to clone them again. S3 catalogs use `aws s3 sync` on every run, with `--delete` for existing downloads to remove files deleted upstream. Failed downloads are cleaned up. The Next.js Pages workflow uses this command; the legacy deployment scripts above are separate.
 - `ci-cd/fetchRepository.sh <repository-url> <destination>` performs a shallow clone and removes repository metadata before the files are copied into the deployment workspace.
 - `ci-cd/validateRequiredFiles.sh <catalog-directory>` validates the static catalog contract.
 
@@ -222,7 +232,7 @@ After all configured downloads succeed, `download-catalog` rebuilds `public/cata
 
 Every configured catalog must provide `.tmc/tm-catalog.toc.json` with a `data` array; a missing or invalid index fails the merge rather than silently excluding that repository.
 
-For example, set this in `.env`, then run `npm run download-catalog`:
+For example, set this in `.env`, then run `pnpm run download-catalog`:
 
 ```dotenv
 CATALOG_REPO_URLS=https://github.com/wot-oss/example-catalog.git,https://gitlab.com/your-org/catalog.git,s3://your-bucket/catalog-prefix/
@@ -230,7 +240,7 @@ CATALOG_REPO_URLS=https://github.com/wot-oss/example-catalog.git,https://gitlab.
 
 GitHub and GitLab sources must be cloneable repository URLs and require Git on `PATH`; private repositories use your configured Git credentials. S3 sources support `s3://bucket/prefix/` and standard AWS S3 HTTPS bucket/prefix URLs, and require the AWS CLI on `PATH` with credentials and region configured (for example via `aws configure` or standard AWS environment variables). Presigned object URLs are not supported. The command requires Node.js 22.20 or newer and does not install these tools.
 
-For a complete local setup that checks Node.js and Yarn, prepares the deployment, installs dependencies, builds, and starts Vite preview, run:
+For a complete local setup that checks Node.js and pnpm, prepares the deployment, installs dependencies, builds, and starts Vite preview, run:
 
 ```sh
 sh setup-local.sh
@@ -272,13 +282,13 @@ Use this section when changing application behavior or contributing to the codeb
 ### Development commands
 
 ```sh
-yarn install          # Install dependencies
-yarn dev              # Start the Vite development server
-yarn build            # Create a production build
-yarn test             # Run Vitest in watch mode
-yarn test:coverage    # Run all tests with coverage
-yarn format           # Format the repository
-yarn format:check     # Check formatting without modifying files
+pnpm install          # Install dependencies
+pnpm dev              # Start the Vite development server
+pnpm build            # Create a production build
+pnpm test             # Run Vitest in watch mode
+pnpm test:coverage    # Run all tests with coverage
+pnpm format           # Format the repository
+pnpm format:check     # Check formatting without modifying files
 ```
 
 The test suite is under `src/__tests__/`. Deployment tests cover the three supported patterns:

@@ -11,17 +11,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.20.0
-          cache: yarn
+          cache: pnpm
 
       - name: Install dependencies
-        run: yarn install
+        run: pnpm install --frozen-lockfile
 
       - name: Fix format style
-        run: yarn format
+        run: pnpm run format
 
       - name: Run format check
-        run: yarn format:check
+        run: pnpm run format:check
