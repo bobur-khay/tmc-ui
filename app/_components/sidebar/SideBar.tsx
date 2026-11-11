@@ -6,6 +6,14 @@ import { capitalize } from '@/lib/utils/strings';
 import type { FilterKey, Filters } from '../data-controls/types';
 import { FilterOptions } from '../filters/FilterOptions';
 
+const filterDescriptions: Record<FilterKey, string> = {
+  author: 'The person or organization that created the Thing Model',
+  manufacturer: 'The manufacturer of the device described by the Thing Model',
+  protocol: 'The communication protocol used to interact with the device',
+  repository:
+    'The catalog repository that contains the Thing Model (e.g., GitHub, GitLab or S3 repo name)',
+};
+
 interface SideBarProps {
   filters: Filters;
   onFilterCheck: (filterKey: FilterKey, optionValue: string) => void;
@@ -18,7 +26,31 @@ export const SideBar = memo(function SideBar({
   resetFilters,
 }: SideBarProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [descriptionKey, setDescriptionKey] = useState<FilterKey | null>(null);
+  const descriptionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const hideDescription = () => {
+    if (descriptionTimer.current !== null) {
+      clearTimeout(descriptionTimer.current);
+      descriptionTimer.current = null;
+    }
+    setDescriptionKey(null);
+  };
+
+  const scheduleDescription = (key: FilterKey) => {
+    hideDescription();
+    descriptionTimer.current = setTimeout(() => {
+      setDescriptionKey(key);
+      descriptionTimer.current = null;
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (descriptionTimer.current !== null) clearTimeout(descriptionTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,11 +88,28 @@ export const SideBar = memo(function SideBar({
           {/* Filters */}
           <form ref={formRef} className="lg:block">
             {Object.entries(filters)
+              .filter(
+                ([key, options]) =>
+                  key !== 'repository' || !Array.isArray(options) || options.length !== 1,
+              )
               .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
               .map(([key, options]) => (
                 <Disclosure key={key} as="div" defaultOpen className="py-3">
-                  <h3 className="flow-root">
-                    <DisclosureButton className="group bg-surface-canvas hover:bg-surface-input-hover -ml-1 flex w-[calc(100%+8px)] cursor-pointer items-center justify-between px-1 py-2 text-sm">
+                  <h3 className="relative flow-root">
+                    <DisclosureButton
+                      className="group bg-surface-canvas hover:bg-surface-input-hover -ml-1 flex w-[calc(100%+8px)] cursor-pointer items-center justify-between px-1 py-2 text-sm"
+                      aria-describedby={
+                        descriptionKey === key ? `filter-description-${key}` : undefined
+                      }
+                      onMouseEnter={() => scheduleDescription(key as FilterKey)}
+                      onMouseLeave={hideDescription}
+                      onFocus={() => scheduleDescription(key as FilterKey)}
+                      onBlur={hideDescription}
+                      onClick={hideDescription}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') hideDescription();
+                      }}
+                    >
                       <span className="text-text-secondary font-medium">{capitalize(key)}</span>
                       <span className="ml-6 flex items-center">
                         <PlusIcon
@@ -73,6 +122,15 @@ export const SideBar = memo(function SideBar({
                         />
                       </span>
                     </DisclosureButton>
+                    {descriptionKey === key && (
+                      <span
+                        id={`filter-description-${key}`}
+                        role="tooltip"
+                        className="bg-surface-modal border-border-subtle text-text-primary absolute top-full left-0 z-50 -ml-1 block w-[calc(100%+8px)] border p-3 text-sm font-normal shadow-lg"
+                      >
+                        {filterDescriptions[descriptionKey]}
+                      </span>
+                    )}
                   </h3>
                   <DisclosurePanel className="bg-surface-canvas pt-2">
                     <FilterOptions

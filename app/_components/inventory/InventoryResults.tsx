@@ -54,7 +54,8 @@ export function InventoryResults({
   loading: boolean;
   view?: 'grid' | 'list';
 }) {
-  const { lastOpenedTM } = useInventoryContext();
+  const { lastOpenedTM, filters } = useInventoryContext();
+  const showRepository = !Array.isArray(filters.repository) || filters.repository.length !== 1;
   if (loading && items.length === 0)
     return (
       <div className="mt-36">
@@ -142,16 +143,20 @@ export function InventoryResults({
                       </p>
                     )}
                     <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
-                      <dt className="text-text-tertiary font-medium">Repository</dt>
-                      <dd
-                        className={
-                          view === 'list'
-                            ? 'text-text-primary min-w-0 wrap-anywhere'
-                            : 'text-text-primary truncate text-right'
-                        }
-                      >
-                        {itemTM.repo ? formatRepositoryName(itemTM.repo) : '—'}
-                      </dd>
+                      {showRepository && (
+                        <>
+                          <dt className="text-text-tertiary font-medium">Repository</dt>
+                          <dd
+                            className={
+                              view === 'list'
+                                ? 'text-text-primary min-w-0 wrap-anywhere'
+                                : 'text-text-primary truncate text-right'
+                            }
+                          >
+                            {itemTM.repo ? formatRepositoryName(itemTM.repo) : '—'}
+                          </dd>
+                        </>
+                      )}
                       <dt className="text-text-tertiary font-medium">TM Name</dt>
                       <dd
                         className={

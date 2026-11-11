@@ -1,4 +1,9 @@
-import { ArrowPathIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import {
+  ArrowPathIcon,
+  InformationCircleIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
+} from '@heroicons/react/20/solid';
 import { useRef } from 'react';
 import Input from '../base/Input';
 
@@ -26,7 +31,7 @@ export function Search({ query, progressState, onSearch }: SearchProps) {
 
   return (
     <>
-      <div className="relative overflow-hidden">
+      <div className="relative">
         <Input
           ref={inputRef}
           type="text"
@@ -50,6 +55,26 @@ export function Search({ query, progressState, onSearch }: SearchProps) {
             className="text-text-secondary pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2"
             aria-hidden="true"
           />
+        )}
+
+        {!query && (
+          <div className="group absolute top-1/2 right-2 -translate-y-1/2">
+            <button
+              type="button"
+              aria-label="Search information"
+              aria-describedby="search-scope-description"
+              className="text-text-secondary hover:text-text-primary focus-visible:outline-focus-ring rounded p-1 focus-visible:outline-2"
+            >
+              <InformationCircleIcon className="size-5" aria-hidden="true" />
+            </button>
+            <span
+              id="search-scope-description"
+              role="tooltip"
+              className="bg-surface-modal border-border-subtle text-text-primary invisible absolute top-full right-0 z-50 mt-2 block w-72 max-w-[calc(100vw-2rem)] rounded-md border p-3 text-sm shadow-lg group-focus-within:visible group-hover:visible"
+            >
+              Search matches the titles and descriptions of Thing Models
+            </span>
+          </div>
         )}
 
         {query && !loading && (
