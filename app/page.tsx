@@ -28,6 +28,7 @@ export default function InventoryLoad() {
 
     /* Filters */
     filters,
+    changedSince,
     toggleFilter,
     resetDataControls,
     checkedFilterOptions,
@@ -76,6 +77,10 @@ export default function InventoryLoad() {
           <aside className="w-full rounded-lg lg:w-1/4 lg:max-w-72" aria-label="Filters">
             <SideBar
               filters={filters}
+              changedSince={changedSince}
+              onChangedSinceChange={(value) =>
+                applyDataControls({ nextDataControls: { changedSince: value, pageNumber: 1 } })
+              }
               onFilterCheck={toggleFilter}
               resetFilters={resetDataControls}
             />
@@ -102,7 +107,9 @@ export default function InventoryLoad() {
                 ) : (
                   <p className="text-lg">
                     Showing{' '}
-                    {Object.keys(checkedFilterOptions).length === 0 && !searchQuery.trim() ? (
+                    {Object.keys(checkedFilterOptions).length === 0 &&
+                    !changedSince &&
+                    !searchQuery.trim() ? (
                       <>
                         all <span className="text-interactive-primary">{totalInventoryCount}</span>{' '}
                         TMs

@@ -34,6 +34,7 @@ export function useInventory() {
 
     /* Filters */
     filters,
+    changedSince,
     toggleFilter,
     checkedFilterOptions,
 
@@ -86,6 +87,7 @@ export function useInventory() {
 
     /* Filters */
     filters,
+    changedSince,
     toggleFilter,
     resetDataControls,
     checkedFilterOptions,

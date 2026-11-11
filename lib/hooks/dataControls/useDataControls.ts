@@ -7,7 +7,7 @@ import type {
 } from '@/app/_components/data-controls/types';
 import type { UseDataControlsProps } from './useDataControlsTypes';
 import type { InventoryItem } from '@/app/_components/inventory/types';
-import { useRef, useMemo, useCallback, useEffect } from 'react';
+import { useRef, useMemo, useCallback, useEffect, useState } from 'react';
 import { fetchApiDataInventory } from '../../services/apiData';
 import { fetchLocalDataInventory } from '../../services/localData';
 import { useSearch } from '../search/useSearch';
@@ -38,6 +38,7 @@ export function useDataControls({
   const { authorizationHeader } = useAuth();
   const abortSignalRef = useRef<AbortController>(new AbortController());
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [changedSince, setChangedSince] = useState('');
 
   /* Search */
   const { searchProgress, setSearchProgress, searchQuery, setSearchQuery } = useSearch();
@@ -61,10 +62,12 @@ export function useDataControls({
     () => ({
       search: [searchQuery, setSearchQuery],
       filters: [filters, setFilters],
+      changedSince: [changedSince, setChangedSince],
       pageNumber: [pageNumber, setPageNumber],
       pageSize: [pageSize, setPageSize],
     }),
     [
+      changedSince,
       filters,
       pageNumber,
       pageSize,
@@ -80,6 +83,7 @@ export function useDataControls({
     await applyDataControls({
       nextDataControls: {
         search: '',
+        changedSince: '',
         filters: Object.entries(filters).reduce((acc, [key, value]) => {
           if ('message' in value) {
             acc[key as FilterKey] = value;
@@ -104,6 +108,7 @@ export function useDataControls({
         nextDataControls.pageNumber === undefined &&
         (nextDataControls.search !== undefined ||
           nextDataControls.filters !== undefined ||
+          nextDataControls.changedSince !== undefined ||
           nextDataControls.pageSize !== undefined)
       ) {
         nextDataControls = { ...nextDataControls, pageNumber: 1 };
@@ -124,6 +129,7 @@ export function useDataControls({
           filters: nextDataControls.filters
             ? getCheckedFilterOptions(nextDataControls.filters)
             : checkedFilterOptions,
+          changedSince: nextDataControls.changedSince ?? changedSince,
           pageNumber: nextDataControls.pageNumber ?? pageNumber,
           pageSize: nextDataControls.pageSize ?? pageSize,
         };
@@ -139,7 +145,13 @@ export function useDataControls({
             //Server Filtering
             debug('Applying server filters');
             const hasSearchDataControl = nextDataControlValues.search.length > 0;
-            const hasFilterControls = nextDataControlValues.filters.length > 0;
+            const apiFilters = {
+              ...nextDataControlValues.filters,
+              ...(nextDataControlValues.changedSince
+                ? { changedSince: nextDataControlValues.changedSince.replace(/-/g, '') }
+                : {}),
+            };
+            const hasFilterControls = Object.keys(apiFilters).length > 0;
             const isSearchNFilter = hasSearchDataControl && hasFilterControls;
 
             const [filterResponse, searchResponse] = await Promise.all([
@@ -149,7 +161,7 @@ export function useDataControls({
                     {
                       signal: controller.signal,
                       authorizationHeader,
-                      filters: nextDataControlValues.filters,
+                      filters: apiFilters,
                     },
                     isSearchNFilter ? undefined : nextDataControlValues.pageNumber,
                     isSearchNFilter ? undefined : nextDataControlValues.pageSize,
@@ -179,13 +191,13 @@ export function useDataControls({
               nextFilteredInventory = (filterResponse.data as InventoryItem[]).filter((item) =>
                 searchTmNames.has(item.tmName),
               );
+              nextFilteredInventoryCount = nextFilteredInventory.length;
               const pageStart =
                 (nextDataControlValues.pageNumber - 1) * nextDataControlValues.pageSize;
               nextFilteredInventory = nextFilteredInventory.slice(
                 pageStart,
                 pageStart + nextDataControlValues.pageSize,
               );
-              nextFilteredInventoryCount = nextFilteredInventory.length;
             } else {
               const response = filterResponse ?? searchResponse;
               nextFilteredInventory = (response?.data as InventoryItem[] | undefined) ?? [];
@@ -203,7 +215,15 @@ export function useDataControls({
             }
             const selectedFilters: CheckedFilterOptions = nextDataControlValues.filters;
             const query = nextDataControlValues.search.toLowerCase();
+            const changedSinceDate = nextDataControlValues.changedSince.replace(/-/g, '');
             nextFilteredInventory = inventory.filter((item) => {
+              const matchesChangedSince =
+                !changedSinceDate ||
+                item.versions?.some(
+                  (version) =>
+                    /^\d{14}$/.test(version.timestamp) &&
+                    version.timestamp.slice(0, 8) >= changedSinceDate,
+                );
               const matchesCatalog =
                 !selectedFilters.repository?.length ||
                 selectedFilters.repository?.includes(item.repo);
@@ -231,7 +251,13 @@ export function useDataControls({
                   item['schema:manufacturer']?.['schema:name'],
                   ...(item.versions?.map((version) => version.description) ?? []),
                 ].some((value) => value?.toLowerCase().includes(query));
-              return matchesCatalog && matchesManufacturer && matchesAuthor && matchesSearch;
+              return (
+                matchesChangedSince &&
+                matchesCatalog &&
+                matchesManufacturer &&
+                matchesAuthor &&
+                matchesSearch
+              );
             });
             nextFilteredInventoryCount = nextFilteredInventory.length;
           }
@@ -271,6 +297,7 @@ export function useDataControls({
     [
       authorizationHeader,
       baseInventory,
+      changedSince,
       checkedFilterOptions,
       dataControlToStateMap,
       getCheckedFilterOptions,
@@ -354,6 +381,7 @@ export function useDataControls({
 
   return {
     filters,
+    changedSince,
     setFilters,
     toggleFilter,
     resetDataControls,

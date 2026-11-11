@@ -1,4 +1,10 @@
-export const allFilterKeys = ['repository', 'manufacturer', 'author', 'protocol'] as const;
+export const allFilterKeys = [
+  'repository',
+  'manufacturer',
+  'author',
+  'protocol',
+  'changedSince',
+] as const;
 export type FilterKey = (typeof allFilterKeys)[number];
 
 export type Filters = Record<FilterKey, FilterData[] | { message: string }>;
@@ -11,6 +17,7 @@ export const EMPTY_FILTERS: Filters = {
   manufacturer: { message: 'Loading...' },
   protocol: { message: 'Loading...' },
   repository: { message: 'Loading...' },
+  changedSince: { message: 'Loading...' },
 };
 
 export type CheckedFilterOptions = Record<FilterKey, string[]>;
@@ -28,6 +35,7 @@ export interface FilterOptionsFetchFunctionParams {
 
 export interface DataControls {
   filters: Filters;
+  changedSince: string;
   search: string;
   pageNumber: number;
   pageSize: number;

@@ -107,6 +107,46 @@ export default function Details() {
         <Loader text="Loading Thing Model..." />
       </div>
     );
+
+  const lastChangedTimestamp =
+    TM.versions?.find(
+      (version) =>
+        buildDetailsId(version.tmID, version.repo || TM.repo) === id || version.tmID === id,
+    )?.timestamp || TM.modified;
+  const timestampText = String(lastChangedTimestamp ?? '').trim();
+  const compactTimestamp = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(timestampText);
+  let lastChangedDate: Date | null = null;
+
+  if (compactTimestamp) {
+    const [, year, month, day, hour, minute, second] = compactTimestamp;
+    lastChangedDate = new Date(
+      Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second),
+      ),
+    );
+  } else if (/^[+-]?\d+(?:\.\d+)?$/.test(timestampText)) {
+    const unixTimestamp = Number(timestampText);
+    lastChangedDate = new Date(
+      Math.abs(unixTimestamp) < 1e12 ? unixTimestamp * 1000 : unixTimestamp,
+    );
+  } else if (timestampText) {
+    lastChangedDate = new Date(timestampText);
+  }
+
+  const lastChangedLabel =
+    lastChangedDate && !Number.isNaN(lastChangedDate.getTime())
+      ? lastChangedDate.toLocaleDateString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : 'Not provided';
+
   return (
     <div className="bg-surface-canvas min-h-dvh">
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -212,6 +252,7 @@ export default function Details() {
                   { label: 'Author', value: TM['schema:author']?.['schema:name'] },
                   { label: 'MPN', value: TM['schema:mpn'] },
                   { label: 'Current version', value: TM.version?.model },
+                  { label: 'Last changed', value: lastChangedLabel },
                 ].map(({ label, value }) => (
                   <div key={label} className="min-w-0">
                     <dt className="text-text-secondary text-xs font-medium">{label}</dt>

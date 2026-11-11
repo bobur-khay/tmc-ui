@@ -10,6 +10,7 @@ interface FetchInventoryOptions {
     readonly protocol?: readonly string[];
     readonly manufacturer?: readonly string[];
     readonly repository?: readonly string[];
+    readonly changedSince?: string;
   };
   readonly search?: string;
 }
@@ -72,6 +73,9 @@ function buildInventoryUrl(
   if (filters?.repository?.length) {
     searchParams.set('repo', filters.repository.join(','));
   }
+  if (filters?.changedSince) {
+    searchParams.set('filter.changedSince', filters.changedSince);
+  }
   if (search) {
     searchParams.set('search', search);
   }
@@ -89,7 +93,7 @@ export async function fetchApiDataInventory(
     baseUrl,
     options: {
       ...options,
-      authorizationHeader: options.authorizationHeader?"******":undefined,
+      authorizationHeader: options.authorizationHeader ? '******' : undefined,
     },
     page,
     pageSize,
@@ -129,11 +133,24 @@ export async function fetchApiDataInventory(
       Array.isArray((json as { data?: unknown }).data)
     ) {
       const data = (json as { data: unknown[] }).data;
-      const meta = (json as { meta?: MetaResponse }).meta;
+      const meta = (
+        json as {
+          meta?: Partial<Omit<MetaResponse, 'page'>> & {
+            page?: Partial<MetaResponse['page']>;
+          };
+        }
+      ).meta;
 
       return {
         data,
-        meta: meta ?? { lastUpdated: '', page: { pageNumber: 0, pageSize: 0, totalElements: 0 } },
+        meta: {
+          lastUpdated: meta?.lastUpdated ?? '',
+          page: {
+            pageNumber: meta?.page?.pageNumber ?? page ?? 1,
+            pageSize: meta?.page?.pageSize ?? pageSize ?? data.length,
+            totalElements: meta?.page?.totalElements ?? data.length,
+          },
+        },
       };
     }
 
@@ -145,7 +162,10 @@ export async function fetchApiDataInventory(
   } catch (err: unknown) {
     // TODO: is not displayed in the UI
     if (err instanceof Response) {
-      const message = await err.clone().text().catch(() => 'Failed to fetch inventory');
+      const message = await err
+        .clone()
+        .text()
+        .catch(() => 'Failed to fetch inventory');
       console.error(`Error fetching inventory (${err.status}): ${message}`);
     } else {
       console.error('Error fetching inventory:', err instanceof Error ? err.message : err);

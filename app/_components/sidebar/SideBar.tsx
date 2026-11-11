@@ -1,9 +1,10 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
-import { MinusIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
+import { ChevronUpIcon } from '@heroicons/react/20/solid';
 import Button from '../base/Button';
+import Input from '../base/Input';
 import { capitalize } from '@/lib/utils/strings';
 import type { FilterKey, Filters } from '../data-controls/types';
+import { Filter } from '../filters/Filter';
 import { FilterOptions } from '../filters/FilterOptions';
 
 const filterDescriptions: Record<FilterKey, string> = {
@@ -12,45 +13,27 @@ const filterDescriptions: Record<FilterKey, string> = {
   protocol: 'The communication protocol used to interact with the device',
   repository:
     'The catalog repository that contains the Thing Model (e.g., GitHub, GitLab or S3 repo name)',
+  changedSince: 'The date since when the Thing Model has been changed',
 };
 
 interface SideBarProps {
   filters: Filters;
+  changedSince: string;
+  onChangedSinceChange: (value: string) => void;
   onFilterCheck: (filterKey: FilterKey, optionValue: string) => void;
   resetFilters: () => void;
 }
 
 export const SideBar = memo(function SideBar({
   filters,
+  changedSince,
+  onChangedSinceChange,
   onFilterCheck,
   resetFilters,
 }: SideBarProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [descriptionKey, setDescriptionKey] = useState<FilterKey | null>(null);
-  const descriptionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [changedSinceDraft, setChangedSinceDraft] = useState(changedSince);
   const formRef = useRef<HTMLFormElement>(null);
-
-  const hideDescription = () => {
-    if (descriptionTimer.current !== null) {
-      clearTimeout(descriptionTimer.current);
-      descriptionTimer.current = null;
-    }
-    setDescriptionKey(null);
-  };
-
-  const scheduleDescription = (key: FilterKey) => {
-    hideDescription();
-    descriptionTimer.current = setTimeout(() => {
-      setDescriptionKey(key);
-      descriptionTimer.current = null;
-    }, 1000);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (descriptionTimer.current !== null) clearTimeout(descriptionTimer.current);
-    };
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -77,6 +60,7 @@ export const SideBar = memo(function SideBar({
           className="rounded px-2"
           onClick={() => {
             formRef.current?.reset();
+            setChangedSinceDraft('');
             resetFilters();
           }}
           variant="plain"
@@ -94,53 +78,34 @@ export const SideBar = memo(function SideBar({
               )
               .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
               .map(([key, options]) => (
-                <Disclosure key={key} as="div" defaultOpen className="py-3">
-                  <h3 className="relative flow-root">
-                    <DisclosureButton
-                      className="group bg-surface-canvas hover:bg-surface-input-hover -ml-1 flex w-[calc(100%+8px)] cursor-pointer items-center justify-between px-1 py-2 text-sm"
-                      aria-describedby={
-                        descriptionKey === key ? `filter-description-${key}` : undefined
-                      }
-                      onMouseEnter={() => scheduleDescription(key as FilterKey)}
-                      onMouseLeave={hideDescription}
-                      onFocus={() => scheduleDescription(key as FilterKey)}
-                      onBlur={hideDescription}
-                      onClick={hideDescription}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Escape') hideDescription();
-                      }}
-                    >
-                      <span className="text-text-secondary font-medium">{capitalize(key)}</span>
-                      <span className="ml-6 flex items-center">
-                        <PlusIcon
-                          aria-hidden="true"
-                          className="text-icon-brand group-hover:text-interactive-hover size-5 group-data-open:hidden"
-                        />
-                        <MinusIcon
-                          aria-hidden="true"
-                          className="text-icon-brand group-hover:text-interactive-hover hidden size-5 group-data-open:block"
-                        />
-                      </span>
-                    </DisclosureButton>
-                    {descriptionKey === key && (
-                      <span
-                        id={`filter-description-${key}`}
-                        role="tooltip"
-                        className="bg-surface-modal border-border-subtle text-text-primary absolute top-full left-0 z-50 -ml-1 block w-[calc(100%+8px)] border p-3 text-sm font-normal shadow-lg"
-                      >
-                        {filterDescriptions[descriptionKey]}
-                      </span>
-                    )}
-                  </h3>
-                  <DisclosurePanel className="bg-surface-canvas pt-2">
-                    <FilterOptions
-                      sectionId={key as FilterKey}
-                      options={options}
-                      onOptionChange={onFilterCheck}
-                    />
-                  </DisclosurePanel>
-                </Disclosure>
+                <Filter
+                  key={key}
+                  label={capitalize(key)}
+                  hint={filterDescriptions[key as FilterKey]}
+                >
+                  <FilterOptions
+                    sectionId={key as FilterKey}
+                    options={options}
+                    onOptionChange={onFilterCheck}
+                  />
+                </Filter>
               ))}
+            <Filter label="Changed Since" hint={filterDescriptions.changedSince}>
+              <Input
+                id="filter-changed-since"
+                type="date"
+                value={changedSinceDraft}
+                onChange={(event) => setChangedSinceDraft(event.target.value)}
+              />
+              <Button
+                type="button"
+                text="Apply"
+                onClick={() => onChangedSinceChange(changedSinceDraft)}
+                disabled={changedSinceDraft === changedSince}
+                className="mt-3 w-full justify-center border"
+                variant="outlined"
+              />
+            </Filter>
           </form>
 
           {showScrollTop && (
