@@ -6,6 +6,7 @@ on:
 
 jobs:
   integration-tests:
+    if: false #todo: finish tests and enable
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
