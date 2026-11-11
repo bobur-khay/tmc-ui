@@ -14,9 +14,14 @@ import type {
   FilterOptionsFetchFunctionParams,
 } from '../data-controls/types';
 
-export async function getAvailableFilterOptionsClient(signal?: AbortSignal): Promise<Filters> {
+type AvailableFilterKey = Exclude<FilterKey, 'changedSince'>;
+type AvailableFilters = Omit<Filters, 'changedSince'>;
+
+export async function getAvailableFilterOptionsClient(
+  signal?: AbortSignal,
+): Promise<AvailableFilters> {
   const unavailable = { message: 'No filter data available' };
-  const filterOptionsResult: Filters = {
+  const filterOptionsResult: AvailableFilters = {
     author: unavailable,
     manufacturer: unavailable,
     repository: unavailable,
@@ -69,12 +74,12 @@ export async function getAvailableFilterOptionsClient(signal?: AbortSignal): Pro
 export async function getAvailableFilterOptionsServer(
   authorizationHeader: string,
   signal?: AbortSignal,
-): Promise<Filters> {
+): Promise<AvailableFilters> {
   const headers = {
     Authorization: authorizationHeader,
   };
 
-  const filterOptionParams: Record<FilterKey, FilterOptionParam> = {
+  const filterOptionParams: Record<AvailableFilterKey, FilterOptionParam> = {
     author: {
       endpoint: AUTHOR_ENDPOINT,
       transform: (json: any) => (json as { data?: string[] } | null)?.data ?? [],
@@ -120,17 +125,17 @@ function getDistinctFilterValues(values: string[]): string[] {
 }
 
 async function getFilterOptionsResults(
-  filterOptionParams: Record<FilterKey, FilterOptionParam>,
+  filterOptionParams: Record<AvailableFilterKey, FilterOptionParam>,
   fetchFunction: ({ endpoint, transform }: FilterOptionsFetchFunctionParams) => Promise<string[]>,
-): Promise<Filters> {
-  const filterOptionResults = {} as Filters;
+): Promise<AvailableFilters> {
+  const filterOptionResults = {} as AvailableFilters;
 
   await Promise.all(
     Object.entries(filterOptionParams).map(async ([filterKey, value]): Promise<void> => {
       if ('skip' in value) {
         return;
       }
-      const typedKey = filterKey as FilterKey;
+      const typedKey = filterKey as AvailableFilterKey;
       try {
         const apiResponse = await fetchFunction({
           endpoint: value.endpoint,
