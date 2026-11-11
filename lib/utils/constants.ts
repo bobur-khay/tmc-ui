@@ -36,7 +36,7 @@ export const OPTIONS_LIST_SIZE = 10;
 
 export const SCROLL_THRESHOLD_PX = 64;
 
-export const INVENTORY_TIMEOUT_MS = 10000;
+export const INVENTORY_TIMEOUT_MS = process.env.IS_STATIC === 'true' ? 60000 : 10000;
 
 export const CATALOG_ROOT_FOLDER = 'catalog-repos';
 
