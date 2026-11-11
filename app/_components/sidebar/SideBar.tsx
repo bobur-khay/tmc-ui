@@ -74,7 +74,8 @@ export const SideBar = memo(function SideBar({
             {Object.entries(filters)
               .filter(
                 ([key, options]) =>
-                  key !== 'repository' || !Array.isArray(options) || options.length !== 1,
+                  key !== 'changedSince' &&
+                  (key !== 'repository' || !Array.isArray(options) || options.length !== 1),
               )
               .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
               .map(([key, options]) => (
