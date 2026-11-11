@@ -1,4 +1,4 @@
-import { ThingDescription } from 'wot-typescript-definitions';
+import type { ThingDescription } from 'wot-typescript-definitions';
 
 export type Link = {
   self: string;
@@ -7,6 +7,7 @@ export type Link = {
 };
 
 export type Version = {
+  attachments?: Attachment[];
   description: string;
   digest: string;
   externalID: string;

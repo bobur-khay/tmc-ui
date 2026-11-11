@@ -1,8 +1,10 @@
+# Next.js
 .next
 next-env.d.ts
 
 # dependencies
 /node_modules
+/public/catalog-repos
 
 
 */.vscode
@@ -12,8 +14,6 @@ next-env.d.ts
 /build
 dist
 /out
-/catalog
-/catalogs
 
 .yarn
 /docs

@@ -64,13 +64,11 @@ export default function InventoryLoad() {
           className="mb-10 flex justify-center gap-4 px-4 sm:px-6 md:flex-row md:items-center"
         >
           <div className="w-full md:w-3/4 lg:w-3/5">
-            {process.env.TMC_SERVER_URL && (
-              <Search
-                progressState={searchProgress}
-                query={searchQuery}
-                onSearch={(query) => applyDataControls({ nextDataControls: { search: query } })}
-              />
-            )}
+            <Search
+              progressState={searchProgress}
+              query={searchQuery}
+              onSearch={(query) => applyDataControls({ nextDataControls: { search: query } })}
+            />
           </div>
         </div>
         <div className="max-w-screen-3xl flex flex-col gap-12 px-4 sm:px-6 lg:flex-row lg:px-8">
@@ -104,7 +102,7 @@ export default function InventoryLoad() {
                 ) : (
                   <p className="text-lg">
                     Showing{' '}
-                    {Object.keys(checkedFilterOptions).length === 0 ? (
+                    {Object.keys(checkedFilterOptions).length === 0 && !searchQuery.trim() ? (
                       <>
                         all <span className="text-interactive-primary">{totalInventoryCount}</span>{' '}
                         TMs

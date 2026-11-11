@@ -5,13 +5,13 @@ import {
   isAuthenticationEnabled,
   requestClientCredentialsToken,
   type RequestClientCredentialsTokenResult,
-} from '../../../lib/services/auth';
-import { CLIENT_ID_SESSION_KEY, CLIENT_SECRET_SESSION_KEY } from '../../../lib/utils/constants';
+} from '@/lib/services/auth';
+import { CLIENT_ID_SESSION_KEY, CLIENT_SECRET_SESSION_KEY } from '@/lib/utils/constants';
 import {
   clearStoredCredentialsSession,
   getProcessedSessionStoreValue,
   setStoredSessionValue,
-} from '../../../lib/utils/storage';
+} from '@/lib/utils/storage';
 import { ValidationLoader } from '../ValidationLoader';
 import { AuthenticationForm } from './AuthenticationForm';
 import { Navbar } from '../Navbar';

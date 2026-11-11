@@ -1,4 +1,5 @@
 import type { FilterKey, FilterData } from '../data-controls/types';
+import { formatRepositoryName } from '@/lib/utils/strings';
 
 interface FilterOptionsProps {
   sectionId: FilterKey;
@@ -58,7 +59,7 @@ export function FilterOptions({ sectionId, options, onOptionChange }: FilterOpti
             htmlFor={`filter-${sectionId}-${optionIdx}`}
             className="text-text-primary hover:text-text-secondary cursor-pointer text-sm"
           >
-            {option.value}
+            {sectionId === 'repository' ? formatRepositoryName(option.value) : option.value}
           </label>
         </div>
       ))}

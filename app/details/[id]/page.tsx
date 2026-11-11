@@ -2,7 +2,7 @@
 import Dropdown from '@/app/_components/base/Dropdown';
 import Loader from '@/app/_components/base/Loader';
 import { fetchTmContentFromServer } from '@/lib/services/apiData';
-import { fetchLocalDataInventory, fetchLocalThingModel } from '@/lib/services/localData';
+import { fetchLocalThingModel } from '@/lib/services/localData';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import {
   ArrowLeftIcon,
@@ -22,7 +22,7 @@ import { buildItemImageSrc } from '@/app/_components/inventory/InventoryResults'
 import Button from '@/app/_components/base/Button';
 import { TmJsonModal } from './_components/TmJsonModal';
 import ShareModal from './_components/ShareModal';
-import { buildDetailsPath, decodeDetailsId } from '@/lib/utils/details';
+import { buildDetailsId, buildDetailsPath, decodeDetailsId } from '@/lib/utils/details';
 
 // TODO: create a loading component that shows the loader only after 1-2 seconds to avoid UI flash
 export default function Details() {
@@ -41,7 +41,7 @@ export default function Details() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [isTmJsonOpen, setTmJsonOpen] = useState(false);
 
-  const imageSrc = buildItemImageSrc(TM?.tmName, TM?.attachments);
+  const imageSrc = buildItemImageSrc(TM?.tmName || TM?.name, TM?.attachments, TM?.repo);
   const imageTitle = TM?.title || TM?.name || TM?.tmName || 'Product image';
 
   const navigateBack = () => {
@@ -50,6 +50,7 @@ export default function Details() {
 
   // Load Thing Model
   useEffect(() => {
+    const controller = new AbortController();
     void (async () => {
       setError(null);
       setLoading(true);
@@ -59,30 +60,29 @@ export default function Details() {
         if (process.env.TMC_SERVER_URL) {
           data = await fetchTmContentFromServer(id, {
             authorizationHeader,
+            signal: controller.signal,
           });
         } else {
-          const inventory = await fetchLocalDataInventory();
-          const item = inventory.find((entry) =>
-            entry.versions?.some((version) => version.tmID === id),
-          );
-          const version = item?.versions?.find((entry) => entry.tmID === id);
-          if (!item || !version?.links.content) throw new Error('Thing Model not found.');
-          const content = await fetchLocalThingModel(version.links.content);
-          data = { ...item, ...content };
+          data = await fetchLocalThingModel(id, controller.signal);
         }
-        setTM(data);
+        if (!controller.signal.aborted) setTM(data);
       } catch (err) {
+        if (controller.signal.aborted) return;
         console.error(err);
         setError(err instanceof Error ? err.message : 'Failed to load item.');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     })();
+    return () => controller.abort();
   }, [id, authorizationHeader]);
 
   const dropdownData: { key: string; value: string }[] =
     TM?.versions?.map((version) => {
-      return { key: version.tmID, value: version.version.model };
+      return {
+        key: buildDetailsId(version.tmID, version.repo || TM.repo),
+        value: version.version.model,
+      };
     }) ?? [];
 
   const sections = useMemo(
@@ -190,7 +190,7 @@ export default function Details() {
                   label="version"
                   id="currentVersion"
                   options={dropdownData}
-                  value={TM?.id ?? ''}
+                  value={id}
                   onChange={(value) => {
                     router.replace(buildDetailsPath(value ?? ''));
                   }}

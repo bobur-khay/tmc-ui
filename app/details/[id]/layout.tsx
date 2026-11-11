@@ -5,7 +5,7 @@ import type { InventoryItem } from '@/app/_components/inventory/types';
 import { fetchApiDataInventory } from '@/lib/services/apiData';
 import { requestClientCredentialsToken } from '@/lib/services/auth';
 import { INVENTORY_FILENAME, REPOSITORY_CATALOG_DEFAULT_FOLDER } from '@/lib/utils/constants';
-import { encodeDetailsId } from '@/lib/utils/details';
+import { buildDetailsId, encodeDetailsId } from '@/lib/utils/details';
 import { DEFAULT_PAGE_SIZE } from '@/lib/hooks/pagination/paginationTypes';
 
 export async function generateStaticParams(): Promise<{ id: string }[]> {
@@ -41,6 +41,7 @@ export async function generateStaticParams(): Promise<{ id: string }[]> {
   } else {
     const catalogPath = path.join(
       process.cwd(),
+      'public',
       REPOSITORY_CATALOG_DEFAULT_FOLDER,
       INVENTORY_FILENAME,
     );
@@ -56,7 +57,7 @@ export async function generateStaticParams(): Promise<{ id: string }[]> {
     const page = inventory.slice(offset, offset + DEFAULT_PAGE_SIZE);
     for (const item of page) {
       for (const version of item.versions ?? []) {
-        ids.add(version.tmID);
+        ids.add(buildDetailsId(version.tmID, version.repo || item.repo));
       }
     }
   }

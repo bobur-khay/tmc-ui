@@ -15,13 +15,36 @@ Set `TMC_SERVER_URL` in the root `.env` file to the backend's HTTP(S) base URL.
   browser requests from the UI origin through CORS.
 - Without a backend URL, no API rewrite is registered and `API_BASE` is `/`
   for local catalog files served from `public/`.
-- `IS_STATIC` enables static export and disables the development proxy;
-  static hosting cannot run Next.js rewrites.
+- `IS_STATIC` enables static export; deployed static hosting cannot run Next.js
+  rewrites.
 
 `LOCAL` does not control the Next.js proxy. Restart the development server after
 changing environment variables, and rebuild production deployments because
 these values are embedded at build time. The deployment instructions below
 still describe the legacy Vite workflow.
+
+## Client-only mode with multiple catalogs
+
+Leave `TMC_SERVER_URL` and its legacy fallback `VITE_SERVER_URL` unset or empty.
+Configure `CATALOG_REPO_URLS` in the root `.env` as a comma-separated list of Git
+or S3 catalog URLs, then run:
+
+```sh
+npm run download-catalog
+npm run dev
+```
+
+The downloader stores each repository under `public/catalog-repos/<repo>/` and
+merges their indexes into `public/catalog-repos/.tmc/tm-catalog.toc.json`.
+The browser reads that merged index and loads model files and attachments from
+their source repository. Search, author/manufacturer/repository filters, and
+pagination run locally. Protocol filtering is unavailable because the catalog
+index does not contain per-model protocols.
+
+For static hosting, set `IS_STATIC=true` and run `npm run build`. Set `BASE_PATH`
+when deploying below the host root. Detail and image routes are generated for
+every repository/version pair; repository-qualified IDs keep duplicate models
+from different sources independently addressable. Rebuild after catalog changes.
 
 ## Next.js GitHub Pages Deployment
 
@@ -38,10 +61,11 @@ slashes resolve on static hosts. Rebuild and redeploy to update existing links.
 
 Configure these optional repository Actions variables:
 
-- `CATALOG_REPO_URL`: static catalog Git URL; defaults to
-  `https://github.com/wot-oss/example-catalog.git`. The catalog must satisfy the
-  static catalog contract below. CI fetches it for route generation and copies
-  it into `public/catalog/` so catalog data and attachments are published.
+- `CATALOG_REPO_URLS`: comma-separated catalog Git or S3 URLs; falls back to
+  `CATALOG_REPO_URL`, then `https://github.com/wot-oss/example-catalog.git`.
+  CI runs `npm run download-catalog` to prepare `public/catalog-repos/` and its
+  merged index for route generation and publishing. Private S3 sources require
+  AWS credentials in the workflow environment.
 - `TMC_SERVER_URL`: public HTTPS backend URL. When set, CI skips the local
   catalog. The backend must be reachable during the build for inventory reads
   and allow browser requests from the Pages origin through CORS. Build-time
@@ -134,7 +158,8 @@ Use this path to deploy TMC UI by configuration only. The same scripts support a
 | Static, separate repositories | `SERVER_AVAILABLE=false`, with `APP_REPO_URL` and `CATALOG_REPO_URL` | Catalog cloned into `public/` during deployment |
 | Static, combined repository   | `SERVER_AVAILABLE=false`, with catalog files already under `public/` | Catalog shipped with the UI repository          |
 
-Static deployments do not support backend-only features such as server-side filtering or free text search.
+Client-only deployments support local search and author/manufacturer/repository
+filtering, but not server-side operations or protocol filtering.
 
 ### Environment variables
 
@@ -187,11 +212,17 @@ The script:
 
 The scripts under `ci-cd/` can also be used independently:
 
-- `npm run catalogs:download` reads a comma-separated `CATALOG_REPO_URLS` from the environment or the root `.env` file. It downloads each catalog into its own stable, URL-derived subdirectory under the repository-root `catalog-repos/` folder. Missing Git repositories are cloned with their metadata retained; existing repositories are updated with `git pull --ff-only`. Older downloads without `.git` must be moved outside `catalog-repos/` before rerunning to clone them again. S3 catalogs use `aws s3 sync` on every run. Failed downloads are cleaned up. This standalone command does not change the deployment flow above.
+- `npm run download-catalog` reads a comma-separated `CATALOG_REPO_URLS` from the environment or the root `.env` file. It downloads each catalog into its own stable, URL-derived subdirectory under `public/catalog-repos/`. Missing Git repositories are cloned with their metadata retained; existing repositories are updated with `git pull --ff-only`. Older downloads without `.git` must be moved outside `public/catalog-repos/` before rerunning to clone them again. S3 catalogs use `aws s3 sync` on every run, with `--delete` for existing downloads to remove files deleted upstream. Failed downloads are cleaned up. The Next.js Pages workflow uses this command; the legacy deployment scripts above are separate.
 - `ci-cd/fetchRepository.sh <repository-url> <destination>` performs a shallow clone and removes repository metadata before the files are copied into the deployment workspace.
 - `ci-cd/validateRequiredFiles.sh <catalog-directory>` validates the static catalog contract.
 
-For example, set this in `.env`, then run `npm run catalogs:download`:
+The download command treats `public/catalog-repos/` as a managed directory. After validating the configured URLs, it first deletes all subdirectories and directory symlinks not associated with those URLs, except the merged `.tmc/` folder. This also removes local changes in unconfigured repositories and abandoned temporary directories; do not keep unrelated folders there. Empty or invalid URL configuration fails before deletion. Configured repositories are then updated or cloned. Deletions and completed updates are not rolled back if a later operation fails.
+
+After all configured downloads succeed, `download-catalog` rebuilds `public/catalog-repos/.tmc/` from their root `.tmc/` folders. It combines the `data` arrays in `tm-catalog.toc.json`, updates the merged creation timestamp, and deduplicates lines in `.txt` files and `.tmcignore`. Each model and version receives a `repo` field containing its stable, URL-derived source directory name (for example, `example-catalog-a32da3c49684`). The static UI derives repository filter options from these fields, keeping identically named models from different repositories distinguishable. Other files and subdirectories are copied, with later sources taking precedence on filename collisions. Relative content links remain unchanged. Only the currently configured sources are included, and the previous merged folder is kept if preparing the new metadata fails.
+
+Every configured catalog must provide `.tmc/tm-catalog.toc.json` with a `data` array; a missing or invalid index fails the merge rather than silently excluding that repository.
+
+For example, set this in `.env`, then run `npm run download-catalog`:
 
 ```dotenv
 CATALOG_REPO_URLS=https://github.com/wot-oss/example-catalog.git,https://gitlab.com/your-org/catalog.git,s3://your-bucket/catalog-prefix/

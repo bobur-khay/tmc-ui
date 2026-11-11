@@ -20,7 +20,7 @@ export default function ImageViewer({
   const [isDownloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const imageSrc = buildItemImageSrc(TM.tmName, TM.attachments);
+  const imageSrc = buildItemImageSrc(TM.tmName || TM.name, TM.attachments, TM.repo);
   const imageTitle = TM.title || TM.name || TM.tmName || 'Product image';
 
   const downloadImage = async () => {

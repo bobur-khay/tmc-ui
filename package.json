@@ -12,12 +12,13 @@
     "url": "https://github.com/wot-oss/tmc-ui/issues"
   },
   "private": true,
+  "type": "module",
   "packageManager": "yarn@1.22.22",
   "scripts": {
     "dev": "next dev -p 5173",
     "build": "next build",
     "start": "next start",
-    "catalogs:download": "node --experimental-strip-types ci-cd/catalog.ts",
+    "download-catalog": "node --experimental-strip-types ci-cd/catalog.ts",
     "test": "vitest",
     "test:integration": "vitest src/tests/integration",
     "test:integration:static": "vitest src/tests/integration/static",

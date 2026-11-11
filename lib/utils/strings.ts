@@ -3,6 +3,10 @@ export function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+export function formatRepositoryName(repository: string): string {
+  return !process.env.TMC_SERVER_URL ? repository.replace(/-[a-f0-9]{12}$/, '') : repository;
+}
+
 export function normalizeString(str: string): string {
   return str
     .trim()

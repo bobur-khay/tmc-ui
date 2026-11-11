@@ -1,3 +1,7 @@
+export function buildDetailsId(id: string, repository?: string): string {
+  return !process.env.TMC_SERVER_URL && repository ? `${repository}/${id}` : id;
+}
+
 export function encodeDetailsId(id: string): string {
   if (process.env.IS_STATIC !== 'true') return encodeURIComponent(id);
 
@@ -13,6 +17,6 @@ export function decodeDetailsId(id: string): string {
   return new TextDecoder().decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)));
 }
 
-export function buildDetailsPath(id: string, image = false): string {
-  return `/details/${encodeDetailsId(id)}${image ? '/image' : ''}`;
+export function buildDetailsPath(id: string, image = false, repository?: string): string {
+  return `/details/${encodeDetailsId(buildDetailsId(id, repository))}${image ? '/image' : ''}`;
 }

@@ -1,13 +1,18 @@
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, rename, rm } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { loadEnvFile } from 'node:process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { CATALOG_ROOT_FOLDER } from '../lib/utils/constants.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const catalogsDirectory = join(root, 'catalog-repos');
+const catalogsDirectory = join(root, 'public', CATALOG_ROOT_FOLDER);
+
+function logProgress(message: string) {
+  process.stdout.write(`[${new Date().toISOString()}] [catalogs] ${message}\n`);
+}
 
 function parseSource(source: string) {
   const url = new URL(source);
@@ -61,7 +66,83 @@ function run(command: string, args: string[]): Promise<void> {
   });
 }
 
+async function mergeCatalogMetadata(directories: string[]) {
+  const temporaryDirectory = await mkdtemp(join(catalogsDirectory, '.merge-'));
+  const destination = join(catalogsDirectory, '.tmc');
+  const textFiles = new Map<string, Set<string>>();
+  const data: unknown[] = [];
+  let metadata: Record<string, unknown> = {};
+
+  try {
+    for (const [index, directory] of directories.entries()) {
+      logProgress(`[${index + 1}/${directories.length}] Merging metadata: ${directory}`);
+      const previousModelCount = data.length;
+      const source = join(catalogsDirectory, directory, '.tmc');
+      const entries = await readdir(source, { withFileTypes: true });
+      if (!entries.some((entry) => entry.isFile() && entry.name === 'tm-catalog.toc.json')) {
+        throw new Error(`Missing catalog index: ${join(source, 'tm-catalog.toc.json')}.`);
+      }
+      for (const entry of entries) {
+        const sourceFile = join(source, entry.name);
+        if (entry.isFile() && entry.name === 'tm-catalog.toc.json') {
+          const catalog = JSON.parse(await readFile(sourceFile, 'utf8'));
+          if (!Array.isArray(catalog?.data)) {
+            throw new Error(`Invalid catalog index: ${sourceFile}. Expected a data array.`);
+          }
+          metadata = { ...metadata, ...catalog.meta };
+          for (const item of catalog.data) {
+            data.push({
+              ...item,
+              repo: directory,
+              ...(Array.isArray(item.versions)
+                ? {
+                    versions: item.versions.map((version: Record<string, unknown>) => ({
+                      ...version,
+                      repo: directory,
+                    })),
+                  }
+                : {}),
+            });
+          }
+        } else if (entry.isFile() && (entry.name.endsWith('.txt') || entry.name === '.tmcignore')) {
+          const lines = textFiles.get(entry.name) ?? new Set<string>();
+          for (const line of (await readFile(sourceFile, 'utf8')).split(/\r?\n/)) {
+            if (line) lines.add(line);
+          }
+          textFiles.set(entry.name, lines);
+        } else {
+          await cp(sourceFile, join(temporaryDirectory, entry.name), { recursive: true });
+        }
+      }
+      logProgress(
+        `[${index + 1}/${directories.length}] Merged ${directory}: ${data.length - previousModelCount} models, ${entries.length} metadata files`,
+      );
+    }
+
+    logProgress(`Writing merged index: ${data.length} models and ${textFiles.size} text lists`);
+    for (const [name, lines] of textFiles) {
+      await writeFile(
+        join(temporaryDirectory, name),
+        [...lines].join('\n') + (lines.size ? '\n' : ''),
+      );
+    }
+    await writeFile(
+      join(temporaryDirectory, 'tm-catalog.toc.json'),
+      JSON.stringify({ meta: { ...metadata, created: new Date().toISOString() }, data }, null, 2) +
+        '\n',
+    );
+    await rm(destination, { recursive: true, force: true });
+    await rename(temporaryDirectory, destination);
+    logProgress('Merged metadata saved to public/catalog-repos/.tmc');
+    return data.length;
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+}
+
 async function main() {
+  const startedAt = Date.now();
+  logProgress('Starting catalog synchronization');
   const envPath = join(root, '.env');
   if (existsSync(envPath)) loadEnvFile(envPath);
 
@@ -78,31 +159,57 @@ async function main() {
     throw new Error('Set CATALOG_REPO_URLS to a comma-separated list of catalog URLs.');
   }
 
-  const sources = urls.map(parseSource);
+  const sources = [
+    ...new Map(urls.map(parseSource).map((catalog) => [catalog.directory, catalog])).values(),
+  ];
+  logProgress(`[1/4] Configuration validated: ${sources.length} catalog sources`);
   await mkdir(catalogsDirectory, { recursive: true });
 
-  for (const catalog of sources) {
+  logProgress('[2/4] Removing unconfigured catalogs');
+  let removedCount = 0;
+  const configuredDirectories = new Set(sources.map((catalog) => catalog.directory));
+  for (const entry of await readdir(catalogsDirectory, { withFileTypes: true })) {
+    if (
+      (entry.isDirectory() || entry.isSymbolicLink()) &&
+      entry.name !== '.tmc' &&
+      !configuredDirectories.has(entry.name)
+    ) {
+      logProgress(`Removing unconfigured catalog: public/catalog-repos/${entry.name}`);
+      await rm(join(catalogsDirectory, entry.name), { recursive: true, force: true });
+      removedCount++;
+      logProgress(`Removed public/catalog-repos/${entry.name}`);
+    }
+  }
+  logProgress(`Cleanup complete: ${removedCount} unconfigured folders removed`);
+
+  logProgress('[3/4] Updating existing catalogs and downloading missing catalogs');
+  let updatedCount = 0;
+  let downloadedCount = 0;
+  for (const [index, catalog] of sources.entries()) {
+    const progress = `[${index + 1}/${sources.length}]`;
     const destination = join(catalogsDirectory, catalog.directory);
     if (existsSync(destination)) {
       if (catalog.s3) {
-        process.stdout.write(`Syncing catalog: catalog-repos/${catalog.directory}\n`);
-        await run('aws', ['s3', 'sync', catalog.source, destination]);
+        logProgress(`${progress} Syncing catalog: public/catalog-repos/${catalog.directory}`);
+        await run('aws', ['s3', 'sync', catalog.source, destination, '--delete']);
       } else {
         if (!existsSync(join(destination, '.git'))) {
           throw new Error(
-            `Catalog catalog-repos/${catalog.directory} has no Git metadata. Move it outside catalog-repos and rerun to clone the repository.`,
+            `Catalog public/catalog-repos/${catalog.directory} has no Git metadata. Move it outside public/catalog-repos and rerun to clone the repository.`,
           );
         }
-        process.stdout.write(`Pulling catalog: catalog-repos/${catalog.directory}\n`);
+        logProgress(`${progress} Pulling catalog: public/catalog-repos/${catalog.directory}`);
         await run('git', ['-C', destination, 'pull', '--ff-only']);
       }
+      updatedCount++;
+      logProgress(`${progress} Updated catalog: ${catalog.directory}`);
       continue;
     }
 
     const temporaryDirectory = await mkdtemp(join(catalogsDirectory, '.download-'));
     const downloadDirectory = join(temporaryDirectory, 'catalog');
     try {
-      process.stdout.write(`Downloading catalog: catalog-repos/${catalog.directory}\n`);
+      logProgress(`${progress} Downloading catalog: public/catalog-repos/${catalog.directory}`);
       if (catalog.s3) {
         await mkdir(downloadDirectory);
         await run('aws', ['s3', 'sync', catalog.source, downloadDirectory]);
@@ -110,14 +217,24 @@ async function main() {
         await run('git', ['clone', '--depth', '1', '--', catalog.source, downloadDirectory]);
       }
       await rename(downloadDirectory, destination);
-      process.stdout.write(`Downloaded catalog: catalog-repos/${catalog.directory}\n`);
+      downloadedCount++;
+      logProgress(`${progress} Downloaded catalog: ${catalog.directory}`);
     } finally {
       await rm(temporaryDirectory, { recursive: true, force: true });
     }
   }
+
+  logProgress('[4/4] Building merged metadata with repository filter IDs');
+  const modelCount = await mergeCatalogMetadata(sources.map((catalog) => catalog.directory));
+  const elapsedSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
+  logProgress(
+    `Complete in ${elapsedSeconds}s: ${removedCount} removed, ${updatedCount} updated, ${downloadedCount} downloaded, ${modelCount} models merged`,
+  );
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : 'Catalog download failed.');
+  console.error(
+    `[${new Date().toISOString()}] [catalogs] ERROR: ${error instanceof Error ? error.message : 'Catalog download failed.'}`,
+  );
   process.exitCode = 1;
 });

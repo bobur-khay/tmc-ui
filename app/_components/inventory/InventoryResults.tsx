@@ -3,8 +3,9 @@ import Loader from '../base/Loader';
 import { Card } from './Card';
 import Link from 'next/link';
 import type { Attachment, InventoryItem, Version } from './types';
-import { CATALOG_ROOT_FOLDER } from '@/lib/utils/constants';
+import { buildLocalCatalogPath } from '@/lib/services/localData';
 import { buildDetailsPath } from '@/lib/utils/details';
+import { formatRepositoryName } from '@/lib/utils/strings';
 import { useInventoryContext } from './InventoryProvider';
 
 const DEFAULT_IMAGE_SRC = `${process.env.BASE_PATH || ''}/default-image.png`;
@@ -12,24 +13,27 @@ const DEFAULT_IMAGE_SRC = `${process.env.BASE_PATH || ''}/default-image.png`;
 const buildItemKey = (itemTM: InventoryItem, i: number): string =>
   `${itemTM.repo}:${itemTM.repo}:${itemTM['schema:mpn']}:row-${i}`;
 
-// TODO: adapt the builder on client to the next.js migration
 export const buildItemImageSrc = (
   tmName: string | undefined,
   attachments: Attachment[] | undefined,
+  repository?: string,
 ): string => {
   if (!attachments) return DEFAULT_IMAGE_SRC;
 
   const pngImageSrc: Attachment | undefined = attachments.find((att) => att.name.endsWith('png'));
 
   if (!process.env.TMC_SERVER_URL) {
-    if (!tmName || !pngImageSrc) return DEFAULT_IMAGE_SRC;
+    if (!tmName || !pngImageSrc || !repository) return DEFAULT_IMAGE_SRC;
 
-    return `${process.env.BASE_PATH || ''}/${CATALOG_ROOT_FOLDER}/${tmName}/.attachments/${pngImageSrc.name}`;
+    return buildLocalCatalogPath(
+      repository,
+      pngImageSrc.links?.content ?? `${tmName}/.attachments/${pngImageSrc.name}`,
+    );
   }
 
   if (!pngImageSrc) return DEFAULT_IMAGE_SRC;
 
-  const attachmentLink: string | undefined = pngImageSrc.links.content;
+  const attachmentLink: string | undefined = pngImageSrc.links?.content;
 
   if (!attachmentLink) return DEFAULT_IMAGE_SRC;
 
@@ -92,7 +96,11 @@ export function InventoryResults({
         {items.map((itemTM, i) => {
           const key = buildItemKey(itemTM, i);
           const title = itemTM.name ?? itemTM.tmName;
-          const imageSrc = buildItemImageSrc(title, itemTM.attachments);
+          const imageSrc = buildItemImageSrc(
+            itemTM.tmName || itemTM.name,
+            itemTM.attachments,
+            itemTM.repo,
+          );
           const versionCount = itemTM.versions?.length ?? 0;
 
           return (
@@ -106,7 +114,11 @@ export function InventoryResults({
             >
               <Link
                 className="block h-full"
-                href={buildDetailsPath(getLatestTmID(itemTM.versions ?? []) ?? '')}
+                href={buildDetailsPath(
+                  getLatestTmID(itemTM.versions ?? []) ?? '',
+                  false,
+                  itemTM.repo,
+                )}
               >
                 <Card
                   view={view}
@@ -138,7 +150,7 @@ export function InventoryResults({
                             : 'text-text-primary truncate text-right'
                         }
                       >
-                        {itemTM.repo ?? '—'}
+                        {itemTM.repo ? formatRepositoryName(itemTM.repo) : '—'}
                       </dd>
                       <dt className="text-text-tertiary font-medium">TM Name</dt>
                       <dd

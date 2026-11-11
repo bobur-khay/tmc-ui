@@ -4,7 +4,7 @@ import { MoonIcon, SunIcon } from '@heroicons/react/20/solid';
 import Button from './base/Button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { THEME_KEY } from '../../lib/utils/constants';
+import { THEME_KEY } from '@/lib/utils/constants';
 
 type Theme = 'light' | 'dark';
 

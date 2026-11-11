@@ -1,4 +1,4 @@
-import { type FilterData } from '@/app/_components/data-controls/types';
+import type { FilterData } from '@/app/_components/data-controls/types';
 
 export const INVENTORY_ENDPOINT = 'inventory';
 
@@ -38,7 +38,7 @@ export const SCROLL_THRESHOLD_PX = 64;
 
 export const INVENTORY_TIMEOUT_MS = 10000;
 
-export const CATALOG_ROOT_FOLDER = 'catalog';
+export const CATALOG_ROOT_FOLDER = 'catalog-repos';
 
 export const REPOSITORY_CATALOG_DEFAULT_FOLDER = `${CATALOG_ROOT_FOLDER}/.tmc/`;
 

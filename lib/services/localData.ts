@@ -5,8 +5,18 @@ import {
   INVENTORY_FILENAME,
 } from '../utils/constants';
 import type { DetailedInventoryItem, InventoryItem } from '@/app/_components/inventory/types';
+import { buildDetailsId } from '../utils/details';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
+
+export function buildLocalCatalogPath(repository: string, fullpath: string): string {
+  const path = [repository, normalizeRelativePathSegment(fullpath)]
+    .join('/')
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `${process.env.BASE_PATH || ''}/${CATALOG_ROOT_FOLDER}/${path}`;
+}
 
 export async function fetchLocalDataInventory(signal?: AbortSignal): Promise<InventoryItem[]> {
   const folder = ensureTrailingSlash(
@@ -40,7 +50,11 @@ export async function fetchLocalDataInventory(signal?: AbortSignal): Promise<Inv
   return [];
 }
 
-export async function fetchDataFromTxT(baseUrl: string, textFilename: string): Promise<string[]> {
+export async function fetchDataFromTxT(
+  baseUrl: string,
+  textFilename: string,
+  signal?: AbortSignal,
+): Promise<string[]> {
   const folder = ensureTrailingSlash(
     normalizeRelativePathSegment(REPOSITORY_CATALOG_DEFAULT_FOLDER),
   );
@@ -49,7 +63,7 @@ export async function fetchDataFromTxT(baseUrl: string, textFilename: string): P
   const basePath = `${process.env.BASE_PATH || ''}/`;
   const url = new URL(`${basePath}${folder}${filename}`, baseUrl);
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { signal });
   if (!res.ok) {
     throw new Error(`Failed to fetch data from ${textFilename} (${res.status})`);
   }
@@ -68,18 +82,24 @@ export async function fetchDataFromTxT(baseUrl: string, textFilename: string): P
   return data;
 }
 
-// TODO: Enhance fetchLocalThingModel to also extract imgSrc and tmName from the fetched JSON.
-export async function fetchLocalThingModel(fullpath: string): Promise<DetailedInventoryItem> {
-  isDevelopment && console.warn('Fetching local Thing Model from path:', fullpath);
+export async function fetchLocalThingModel(
+  id: string,
+  signal?: AbortSignal,
+): Promise<DetailedInventoryItem> {
+  const inventory = await fetchLocalDataInventory(signal);
+  const item = inventory.find((entry) =>
+    entry.versions?.some(
+      (version) =>
+        buildDetailsId(version.tmID, version.repo || entry.repo) === id || version.tmID === id,
+    ),
+  );
+  const version = item?.versions?.find(
+    (entry) => buildDetailsId(entry.tmID, entry.repo || item.repo) === id || entry.tmID === id,
+  );
+  if (!item || !version?.links.content) throw new Error('Thing Model not found.');
 
-  const basePath = `${process.env.BASE_PATH || ''}/`;
-  const urlBase = `${basePath}${CATALOG_ROOT_FOLDER}/${normalizeRelativePathSegment(fullpath)}`;
-  isDevelopment && console.warn('Computed URL base for Thing Model:', urlBase);
-  const url = new URL(`${urlBase}`, window.location.origin);
-
-  isDevelopment && console.warn('Fetching local Thing Model from URL:', url.toString());
-
-  const res = await fetch(url.toString());
+  const url = buildLocalCatalogPath(version.repo || item.repo, version.links.content);
+  const res = await fetch(url, { signal });
   if (!res.ok) {
     throw new Response('Failed to fetch local Thing Model', {
       status: res.status,
@@ -89,5 +109,30 @@ export async function fetchLocalThingModel(fullpath: string): Promise<DetailedIn
   const json: unknown = await res.json();
   isDevelopment && console.warn('Fetched local Thing Model JSON:', json);
 
-  return json as DetailedInventoryItem;
+  const tmName = item.tmName || item.name;
+  const versionDirectory = version.links.content
+    .split('/')
+    .pop()
+    ?.replace(/\.tm\.json$/, '');
+  const attachments =
+    version.attachments?.map((attachment) => {
+      const path = `${tmName}/.attachments/${versionDirectory}/${attachment.name}`;
+      return {
+        ...attachment,
+        links: {
+          ...attachment.links,
+          self: attachment.links?.self ?? path,
+          content: attachment.links?.content ?? path,
+        },
+      };
+    }) ?? item.attachments;
+
+  return {
+    ...item,
+    ...(json as DetailedInventoryItem),
+    repo: version.repo || item.repo,
+    tmName,
+    versions: item.versions,
+    attachments,
+  };
 }

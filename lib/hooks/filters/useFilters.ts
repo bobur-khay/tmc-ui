@@ -42,7 +42,7 @@ export function useFilters() {
         signal,
       );
     } else {
-      filterOptionResults = await getAvailableFilterOptionsClient();
+      filterOptionResults = await getAvailableFilterOptionsClient(signal);
     }
 
     if (signal.aborted) return;

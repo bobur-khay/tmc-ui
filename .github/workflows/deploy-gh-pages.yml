@@ -27,7 +27,7 @@ jobs:
       IS_STATIC: 'true'
       TMC_SERVER_URL: ${{ vars.TMC_SERVER_URL }}
       TOKEN_URL: ${{ vars.TOKEN_URL }}
-      CATALOG_REPO_URL: ${{ vars.CATALOG_REPO_URL || 'https://github.com/wot-oss/example-catalog.git' }}
+      CATALOG_REPO_URLS: ${{ vars.CATALOG_REPO_URLS || vars.CATALOG_REPO_URL || 'https://github.com/wot-oss/example-catalog.git' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,12 +41,7 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Prepare local catalog
         if: env.TMC_SERVER_URL == ''
-        run: |
-          sh ci-cd/fetchRepository.sh "$CATALOG_REPO_URL" "$RUNNER_TEMP/pages-catalog"
-          sh ci-cd/validateRequiredFiles.sh "$RUNNER_TEMP/pages-catalog"
-          mkdir -p catalog public/catalog
-          cp -R "$RUNNER_TEMP/pages-catalog/." catalog/
-          cp -R "$RUNNER_TEMP/pages-catalog/." public/catalog/
+        run: npm run download-catalog
       - name: Restore cache
         uses: actions/cache@v4
         with:

@@ -5,7 +5,7 @@ import { ErrorUI } from '@/app/_components/error/ErrorUI';
 import type { DetailedInventoryItem } from '@/app/_components/inventory/types';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { fetchTmContentFromServer } from '@/lib/services/apiData';
-import { fetchLocalDataInventory, fetchLocalThingModel } from '@/lib/services/localData';
+import { fetchLocalThingModel } from '@/lib/services/localData';
 import { buildDetailsPath, decodeDetailsId } from '@/lib/utils/details';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -33,14 +33,7 @@ export default function ImagePage() {
             signal: controller.signal,
           });
         } else {
-          const inventory = await fetchLocalDataInventory(controller.signal);
-          const item = inventory.find((entry) =>
-            entry.versions?.some((version) => version.tmID === id),
-          );
-          const version = item?.versions?.find((entry) => entry.tmID === id);
-          if (!item || !version?.links.content) throw new Error('Thing Model not found.');
-          const content = await fetchLocalThingModel(version.links.content);
-          data = { ...item, ...content };
+          data = await fetchLocalThingModel(id, controller.signal);
         }
         if (!controller.signal.aborted) setModel(data);
       } catch (err) {
