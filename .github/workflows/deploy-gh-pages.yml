@@ -45,7 +45,7 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Prepare local catalog
         if: env.TMC_SERVER_URL == ''
-        run: pnpm run download-catalog
+        run: pnpm run catalogs-download
       - name: Restore cache
         uses: actions/cache@v4
         with:
