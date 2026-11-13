@@ -212,7 +212,10 @@ async function main() {
         }
         logProgress(`${progress} Pulling catalog: public/catalog-repos/${catalog.directory}`);
         await run('git', [
-          '-C', destination, 'pull', '--ff-only',
+          '-C',
+          destination,
+          'pull',
+          '--ff-only',
           ...(gitSource !== catalog.source ? [gitSource] : []),
         ]);
       }
@@ -231,7 +234,14 @@ async function main() {
       } else {
         await run('git', ['clone', '--depth', '1', '--', gitSource, downloadDirectory]);
         if (gitSource !== catalog.source) {
-          await run('git', ['-C', downloadDirectory, 'remote', 'set-url', 'origin', catalog.source]);
+          await run('git', [
+            '-C',
+            downloadDirectory,
+            'remote',
+            'set-url',
+            'origin',
+            catalog.source,
+          ]);
         }
       }
       await rename(downloadDirectory, destination);
