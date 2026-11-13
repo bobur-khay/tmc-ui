@@ -238,6 +238,8 @@ For example, set this in `.env`, then run `pnpm run download-catalog`:
 CATALOG_REPO_URLS=https://github.com/wot-oss/example-catalog.git,https://gitlab.com/your-org/catalog.git,s3://your-bucket/catalog-prefix/
 ```
 
+For private HTTPS catalogs on `code.siemens.com`, pass a GitLab job token with `npm run catalogs:download -- --token "$CI_JOB_TOKEN"` (shell syntax), or set `CI_JOB_TOKEN` in the environment or root `.env` file. The `--token` argument takes precedence. Authentication uses the `gitlab-ci-token` username for clones and pulls; the supplied token is not retained in the saved origin URL. Other hosts continue to use your configured Git credentials.
+
 GitHub and GitLab sources must be cloneable repository URLs and require Git on `PATH`; private repositories use your configured Git credentials. S3 sources support `s3://bucket/prefix/` and standard AWS S3 HTTPS bucket/prefix URLs, and require the AWS CLI on `PATH` with credentials and region configured (for example via `aws configure` or standard AWS environment variables). Presigned object URLs are not supported. The command requires Node.js 22.20 or newer and does not install these tools.
 
 For a complete local setup that checks Node.js and pnpm, prepares the deployment, installs dependencies, builds, and starts Vite preview, run:

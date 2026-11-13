@@ -5,6 +5,7 @@ import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'no
 import { loadEnvFile } from 'node:process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { CATALOG_ROOT_FOLDER } from '../lib/utils/constants.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -146,6 +147,8 @@ async function main() {
   const envPath = join(root, '.env');
   if (existsSync(envPath)) loadEnvFile(envPath);
 
+  const { values } = parseArgs({ options: { token: { type: 'string' } } });
+  const token = values.token ?? process.env.CI_JOB_TOKEN;
   const input = process.env.CATALOG_REPO_URLS;
   const urls = [
     ...new Set(
@@ -188,6 +191,15 @@ async function main() {
   for (const [index, catalog] of sources.entries()) {
     const progress = `[${index + 1}/${sources.length}]`;
     const destination = join(catalogsDirectory, catalog.directory);
+    let gitSource = catalog.source;
+    if (!catalog.s3 && token) {
+      const url = new URL(catalog.source);
+      if (url.protocol === 'https:' && url.hostname === 'code.siemens.com') {
+        url.username = 'gitlab-ci-token';
+        url.password = token;
+        gitSource = url.href;
+      }
+    }
     if (existsSync(destination)) {
       if (catalog.s3) {
         logProgress(`${progress} Syncing catalog: public/catalog-repos/${catalog.directory}`);
@@ -199,7 +211,10 @@ async function main() {
           );
         }
         logProgress(`${progress} Pulling catalog: public/catalog-repos/${catalog.directory}`);
-        await run('git', ['-C', destination, 'pull', '--ff-only']);
+        await run('git', [
+          '-C', destination, 'pull', '--ff-only',
+          ...(gitSource !== catalog.source ? [gitSource] : []),
+        ]);
       }
       updatedCount++;
       logProgress(`${progress} Updated catalog: ${catalog.directory}`);
@@ -214,7 +229,10 @@ async function main() {
         await mkdir(downloadDirectory);
         await run('aws', ['s3', 'sync', catalog.source, downloadDirectory]);
       } else {
-        await run('git', ['clone', '--depth', '1', '--', catalog.source, downloadDirectory]);
+        await run('git', ['clone', '--depth', '1', '--', gitSource, downloadDirectory]);
+        if (gitSource !== catalog.source) {
+          await run('git', ['-C', downloadDirectory, 'remote', 'set-url', 'origin', catalog.source]);
+        }
       }
       await rename(downloadDirectory, destination);
       downloadedCount++;
