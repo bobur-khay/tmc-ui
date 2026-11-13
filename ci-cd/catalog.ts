@@ -147,7 +147,11 @@ async function main() {
   const envPath = join(root, '.env');
   if (existsSync(envPath)) loadEnvFile(envPath);
 
-  const { values } = parseArgs({ options: { token: { type: 'string' } } });
+  const args = process.argv.slice(2);
+  const { values } = parseArgs({
+    args: args[0] === '--' ? args.slice(1) : args,
+    options: { token: { type: 'string' } },
+  });
   const token = values.token ?? process.env.CI_JOB_TOKEN;
   const input = process.env.CATALOG_REPO_URLS;
   const urls = [
