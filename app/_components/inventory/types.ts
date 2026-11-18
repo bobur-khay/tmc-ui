@@ -31,6 +31,7 @@ export type InventoryItem = {
   attachments?: Attachment[];
   links: Link;
   repo: string;
+  protocols?: string[];
   'schema:author': {
     'schema:name': string;
     [key: string]: string;

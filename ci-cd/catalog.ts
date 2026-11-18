@@ -67,6 +67,32 @@ function run(command: string, args: string[]): Promise<void> {
   });
 }
 
+// The catalog index has no protocol data, so read the URI schemes of base and form hrefs.
+async function readProtocols(file: string): Promise<string[]> {
+  const protocols = new Set<string>();
+  const addScheme = (value: unknown) => {
+    const scheme = typeof value === 'string' && value.match(/^([a-z][a-z0-9+.-]*):\/\//i)?.[1];
+    if (scheme) protocols.add(scheme.toLowerCase());
+  };
+  const visit = (node: unknown) => {
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+    } else if (typeof node === 'object' && node !== null) {
+      for (const [key, value] of Object.entries(node)) {
+        if (key === 'forms' && Array.isArray(value)) {
+          value.forEach((form) => addScheme(form?.href));
+        } else {
+          visit(value);
+        }
+      }
+    }
+  };
+  const model = JSON.parse(await readFile(file, 'utf8'));
+  addScheme(model?.base);
+  visit(model);
+  return [...protocols];
+}
+
 async function mergeCatalogMetadata(directories: string[]) {
   const temporaryDirectory = await mkdtemp(join(catalogsDirectory, '.merge-'));
   const destination = join(catalogsDirectory, '.tmc');
@@ -92,8 +118,18 @@ async function mergeCatalogMetadata(directories: string[]) {
           }
           metadata = { ...metadata, ...catalog.meta };
           for (const item of catalog.data) {
+            const protocols = new Set<string>();
+            for (const version of Array.isArray(item.versions) ? item.versions : []) {
+              if (!version.links?.content) continue;
+              const file = join(catalogsDirectory, directory, version.links.content);
+              for (const protocol of await readProtocols(file)) protocols.add(protocol);
+            }
+            const protocolLines = textFiles.get('protocols.txt') ?? new Set<string>();
+            for (const protocol of protocols) protocolLines.add(protocol);
+            textFiles.set('protocols.txt', protocolLines);
             data.push({
               ...item,
+              protocols: [...protocols],
               repo: directory,
               ...(Array.isArray(item.versions)
                 ? {

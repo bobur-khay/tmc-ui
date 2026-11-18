@@ -240,6 +240,13 @@ export function useDataControls({
                   (author) =>
                     author.toLowerCase() === item['schema:author']?.['schema:name']?.toLowerCase(),
                 );
+              const matchesProtocol =
+                !selectedFilters.protocol?.length ||
+                selectedFilters.protocol.some((protocol) =>
+                  item.protocols?.some(
+                    (itemProtocol) => itemProtocol.toLowerCase() === protocol.toLowerCase(),
+                  ),
+                );
               const matchesSearch =
                 !query ||
                 [
@@ -256,6 +263,7 @@ export function useDataControls({
                 matchesCatalog &&
                 matchesManufacturer &&
                 matchesAuthor &&
+                matchesProtocol &&
                 matchesSearch
               );
             });
