@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 
@@ -18,6 +18,21 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const toIsoDate = (year: number, month: number, day: number) =>
   `${year}-${pad(month + 1)}-${pad(day)}`;
 
+const DEFAULT_PLACEHOLDER = 'yyyy-mm-dd';
+const PART_PLACEHOLDERS: Partial<Record<Intl.DateTimeFormatPartTypes, string>> = {
+  year: 'yyyy',
+  month: 'mm',
+  day: 'dd',
+};
+
+const getLocalePlaceholder = () =>
+  new Intl.DateTimeFormat(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(new Date(2000, 0, 1))
+    .map(({ type, value }) => PART_PLACEHOLDERS[type] ?? value)
+    .join('');
+
+const subscribeNoop = () => () => {};
+
 const getInitialMonth = (value: string, max?: string) => {
   const source = value || max;
   if (source) {
@@ -30,6 +45,12 @@ const getInitialMonth = (value: string, max?: string) => {
 
 const DatePicker: React.FC<DatePickerProps> = ({ id, value, max, onChange }) => {
   const [view, setView] = useState(() => getInitialMonth(value, max));
+  // Server locale may differ from the user's, so fall back to ISO during SSR/hydration.
+  const placeholder = useSyncExternalStore(
+    subscribeNoop,
+    getLocalePlaceholder,
+    () => DEFAULT_PLACEHOLDER,
+  );
 
   const firstWeekday = new Date(view.year, view.month, 1).getDay();
   const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
@@ -53,7 +74,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ id, value, max, onChange }) => 
         className="bg-surface-input text-text-primary hover:border-border-interactive-hover hover:bg-surface-input-hover focus-visible:border-border-interactive-hover flex w-full items-center justify-between rounded-md border border-transparent px-3 py-2 font-mono text-sm outline-none"
         onClick={() => setView(getInitialMonth(value, max))}
       >
-        <span className={value ? '' : 'text-text-tertiary'}>{value || 'yyyy-mm-dd'}</span>
+        <span className={value ? '' : 'text-text-tertiary'}>{value || placeholder}</span>
         <CalendarIcon className="text-icon-brand size-5" aria-hidden="true" />
       </PopoverButton>
 
