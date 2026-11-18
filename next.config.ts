@@ -26,9 +26,6 @@ const nextConfig: NextConfig = {
     PLAYGROUND_URL: process.env.PLAYGROUND_URL ?? process.env.VITE_PLAYGROUND_URL,
     CREDENTIALS_SETUP_MESSAGE:
       process.env.CREDENTIALS_SETUP_MESSAGE ?? process.env.VITE_SETUP_CREDENTIALS_MESSAGE,
-    API_HOST: process.env.API_HOST ?? process.env.VITE_API_HOST,
-    API_PORT: process.env.API_PORT ?? process.env.VITE_API_PORT,
-    API_PROTOCOL: process.env.API_PROTOCOL ?? process.env.VITE_API_PROTOCOL,
     API_BASE: useApiProxy ? '/__tmc_api__' : TMC_SERVER_URL || '/',
     CATALOG_REPO_URLS: process.env.CATALOG_REPO_URLS ?? process.env.CATALOG_REPO_URL,
     DEBUG: process.env.DEBUG,

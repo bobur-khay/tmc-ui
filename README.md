@@ -1,410 +1,144 @@
-# Refactoring Draft
+# TMC UI
 
-- env variables change requires server restart
-- env variables should be under github-pages environment
+Web interface for browsing W3C Web of Things **Thing Models (TMs)** managed by a [Thing Model Catalog (TMC)](https://github.com/wot-oss/tmc). It can run against a live TMC server or entirely from catalog files bundled with the app.
 
-## Next.js API proxy configuration
+## Features
 
-Set `TMC_SERVER_URL` in the root `.env` file to the backend's HTTP(S) base URL.
-`VITE_SERVER_URL` is supported as a legacy fallback.
+- **Inventory** (`/`): grid or list view of the inventory with search and filters.
+- **Details** (`/details/[id]`): overview of the TM content, version control and sharing.
+- **API authentication** (`/settings`): OAuth2 client-credentials login when a token endpoint is configured.
+- **Light/dark theme**; theme, view and page size are remembered in `localStorage`.
 
-- With a backend configured, `pnpm dev` sets `API_BASE` to `/__tmc_api__`.
-  Next.js rewrites `/__tmc_api__/:path*` to the backend URL plus the requested
-  path, keeping browser API requests on the UI origin.
-- Production builds use the backend URL directly. The backend must allow
-  browser requests from the UI origin through CORS.
-- Without a backend URL, no API rewrite is registered and `API_BASE` is `/`
-  for local catalog files served from `public/`.
-- `IS_STATIC` enables static export; deployed static hosting cannot run Next.js
-  rewrites.
+## Tech stack
 
-`LOCAL` does not control the Next.js proxy. Restart the development server after
-changing environment variables, and rebuild production deployments because
-these values are embedded at build time. The deployment instructions below
-still describe the legacy Vite workflow.
+Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, Headless UI, Heroicons, Prism.js. Requires Node.js >= 22.20.0 and pnpm 12.18.0.
 
-## Client-only mode with multiple catalogs
+## Deployment modes
 
-Leave `TMC_SERVER_URL` and its legacy fallback `VITE_SERVER_URL` unset or empty.
-Configure `CATALOG_REPO_URLS` in the root `.env` as a comma-separated list of Git
-or S3 catalog URLs, then run:
+Three independent switches, all set through environment variables, define how the app behaves:
 
-```sh
-pnpm run download-catalog
-pnpm run dev
-```
+| Switch           | Unset                                       | Set                                                |
+| ---------------- | ------------------------------------------- | -------------------------------------------------- |
+| `IS_STATIC`      | Next.js Node server (`next start`)          | Static export to `out/` (any static host)          |
+| `TMC_SERVER_URL` | **Client mode**: data from bundled catalogs | **Server mode**: data from the TMC server REST API |
+| `TOKEN_URL`      | No authentication                           | Authentication enabled (server mode only)          |
 
-The downloader stores each repository under `public/catalog-repos/<repo>/` and
-merges their indexes into `public/catalog-repos/.tmc/tm-catalog.toc.json`.
-The browser reads that merged index and loads model files and attachments from
-their source repository. Search, author/manufacturer/repository filters, and
-pagination run locally. Protocol filtering is unavailable because the catalog
-index does not contain per-model protocols.
+<a href="public/deployment-type.svg" target="_blank"><img src="public/deployment-type.svg" alt="Deployment type selection" width="200"></a>
 
-For static hosting, set `IS_STATIC=true` and run `pnpm run build`. Set `BASE_PATH`
-when deploying below the host root. Detail and image routes are generated for
-every repository/version pair; repository-qualified IDs keep duplicate models
-from different sources independently addressable. Rebuild after catalog changes.
+_Click the diagram to open it full size._
 
-## Next.js GitHub Pages Deployment
+### Client mode (no `TMC_SERVER_URL`)
 
-Select **GitHub Actions** as the Pages source in repository settings. Allow
-`refactor/migration-to-nextjs` to deploy to the `github-pages` environment. The
-workflow runs on pushes to that branch or can be dispatched manually when
-available in the Actions tab.
+- Catalogs are downloaded into `public/catalog-repos/` and served as static files.
+- The browser loads the merged index `public/catalog-repos/.tmc/tm-catalog.toc.json` once. Search, filters and pagination run client-side on top of it.
+- Filter options come from the `.txt` lists in `.tmc/` (e.g. `tmnames.txt`, `manufacturers.txt`).
+- Authentication is never active in this mode.
 
-The workflow uses pnpm and enables static export with the base path supplied by
-GitHub Pages. It preserves `next.config.ts` instead of injecting another config.
-Static routes use directory-style URLs so direct links work on Pages.
-Detail route IDs use URL-safe Base64 in static builds so model IDs containing
-slashes resolve on static hosts. Rebuild and redeploy to update existing links.
+### Server mode (`TMC_SERVER_URL` set)
 
-Configure these optional repository Actions variables:
+- Search, filters and pagination are delegated to the TMC server. When search and filters are combined, both results are fetched and intersected in the browser.
+- Endpoints used: `GET /inventory` (`page`, `pageSize`, `search`, `repo`, `filter.author`, `filter.manufacturer`, `filter.protocol`, `filter.changedSince`), `/inventory/.tmName/{tmName}`, `/thing-models/{id}`, `/authors`, `/manufacturers`, `/repos`.
+- In development, requests go through a same-origin proxy (`/__tmc_api__`). In production the browser calls `TMC_SERVER_URL` directly, so the server must allow CORS for the UI origin.
 
-- `CATALOG_REPO_URLS`: comma-separated catalog Git or S3 URLs; falls back to
-  `CATALOG_REPO_URL`, then `https://github.com/wot-oss/example-catalog.git`.
-  CI runs `pnpm run download-catalog` to prepare `public/catalog-repos/` and its
-  merged index for route generation and publishing. Private S3 sources require
-  AWS credentials in the workflow environment.
-- `TMC_SERVER_URL`: public HTTPS backend URL. When set, CI skips the local
-  catalog. The backend must be reachable during the build for inventory reads
-  and allow browser requests from the Pages origin through CORS. Build-time
-  inventory reads currently do not supply authentication credentials.
-- `TOKEN_URL`: optional public OAuth token endpoint for backend authentication.
+### Authentication (`TMC_SERVER_URL` and `TOKEN_URL` set)
 
-These settings are embedded into the browser bundle; do not put credentials or
-secrets in them. Backend model IDs are exported at build time, so new IDs require
-another deployment. GitHub Pages cannot run the development API proxy or render
-new detail routes on demand.
+- `AuthenticationGuard` blocks the app with a credentials form until a token is obtained.
+- Client ID and secret are exchanged at `TOKEN_URL` using the OAuth2 `client_credentials` grant (HTTP Basic). The token is sent as `Authorization: Bearer ...` and refreshed on expiry.
+- Credentials are kept in `sessionStorage` (per browser tab) and can be changed under **API Authentication** (`/settings`).
+- The token endpoint is called from the browser and must allow CORS.
 
-# TMC User Interface
+### Static export (`IS_STATIC=true`)
 
-TMC UI is an open-source web interface for browsing Thing Models (TMs) managed by a [Thing Model Catalog (TMC)](https://github.com/wot-oss/tmc). It supports read-only catalog operations; it is not a browser replacement for the TMC CLI.
+- `next build` writes a fully static site to `out/` (trailing slashes, unoptimized images).
+- Detail pages are pre-generated for every TM version known at build time: from the local merged index in client mode, or from the TMC server in server mode. New TMs need a rebuild to get a detail page.
+- With authentication enabled, the build needs `CLIENT_ID` and `CLIENT_SECRET` to read the inventory. They are used only at build time; users still log in through the form at runtime.
+- Detail IDs in URLs are base64url-encoded (URI-encoded in non-static builds).
 
-This guide is organized for three types of users:
+## Environment variables
 
-1. [Application user](#1-application-user): run TMC UI locally against a TMC backend.
-2. [DevOps user](#2-devops-user): deploy TMC UI without changing its source code.
-3. [Developer](#3-developer): change, test, or extend the application.
+Read from `.env` (see `.env.example`) at **build time** and inlined into the bundle: changing them requires a rebuild. Everything except `CLIENT_ID`/`CLIENT_SECRET` is public. Do not put secrets in the other variables.
 
-## 1. Application user
+| Variable                     | Description                                                                                         |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| `TMC_SERVER_URL`             | Base URL of the TMC server. Enables server mode; client mode when unset.                            |
+| `TOKEN_URL`                  | OAuth2 token endpoint. Enables authentication in server mode.                                       |
+| `IS_STATIC`                  | `true` builds a static export.                                                                      |
+| `BASE_PATH`                  | Sub-path the app is served from (e.g. `/tmc-ui`).                                                   |
+| `CATALOG_REPO_URLS`          | Comma-separated catalog sources for `pnpm catalogs:download` (Git or S3 URLs).                      |
+| `CLIENT_ID`, `CLIENT_SECRET` | Build-time credentials for static export with authentication.                                       |
+| `CREDENTIALS_SETUP_MESSAGE`  | Help text shown on the credentials form. Defaults to a generic message.                             |
+| `EDITDOR_URL`                | EdiTDor instance for "Open with". Default: `https://eclipse-editdor.github.io/editdor/`.            |
+| `PLAYGROUND_URL`             | TD Playground instance for "Open with". Default: `https://playground.thingweb.io/`.                 |
+| `DEBUG`                      | `true` enables verbose console logging.                                                             |
+| `API_BASE`                   | Derived, not set manually: `/__tmc_api__` in development with a server, otherwise `TMC_SERVER_URL`. |
 
-Use this path when you want to run the UI against an existing TMC backend, with or without authentication.
+Legacy names are still accepted: `VITE_SERVER_URL`, `VITE_TOKEN_URL`, `VITE_EDITDOR_URL`, `VITE_PLAYGROUND_URL`, `VITE_SETUP_CREDENTIALS_MESSAGE`, `CATALOG_REPO_URL`.
 
-### Prerequisites
-
-- Git
-- Node.js 22.20.0 or later
-- pnpm 12.18.0 (pinned in `package.json`)
-- A running [TMC instance](https://github.com/wot-oss/tmc) with at least one configured [Thing Model catalog](https://github.com/wot-oss/example-catalog)
-
-Install the pinned package manager:
+## Getting started
 
 ```sh
-npm install --global pnpm@12.18.0
+pnpm install
+cp .env.example .env   # then adjust, see below
 ```
 
-Alternatively, with an up-to-date Corepack installation, run `corepack enable`.
-Corepack reads the `packageManager` field to select the project's pnpm version.
-Commit `pnpm-lock.yaml` when dependencies change; CI uses `pnpm install --frozen-lockfile`.
+| Goal                  | `.env`                                                             | Commands                                  |
+| --------------------- | ------------------------------------------------------------------ | ----------------------------------------- |
+| Client mode           | `CATALOG_REPO_URLS=https://github.com/wot-oss/example-catalog.git` | `pnpm catalogs:download` then `pnpm dev`  |
+| Server mode           | `TMC_SERVER_URL=http://localhost:8080`                             | `pnpm dev`                                |
+| Server mode with auth | additionally `TOKEN_URL=...`                                       | `pnpm dev`                                |
+| Production (Node)     | any of the above                                                   | `pnpm build` then `pnpm start`            |
+| Production (static)   | additionally `IS_STATIC=true`                                      | `pnpm build`, then host the `out/` folder |
 
-### Clone and start
+The dev server runs on <http://localhost:5173>, `pnpm start` on <http://localhost:3000>.
 
-Clone this repository:
+### Downloading catalogs
 
-```sh
-git clone https://github.com/wot-oss/tmc-ui.git
-cd tmc-ui
+`pnpm catalogs:download` (`ci-cd/catalog.ts`) synchronizes `public/catalog-repos/` with `CATALOG_REPO_URLS`:
+
+1. Removes catalog folders that are no longer configured.
+2. Clones missing catalogs (`git clone --depth 1`) or updates existing ones (`git pull --ff-only`); S3 sources (`s3://bucket/prefix` or S3 HTTPS URLs) use `aws s3 sync`.
+3. Merges every catalog's `.tmc/` metadata into `public/catalog-repos/.tmc/`, tagging each TM with its repository so it can be filtered.
+
+Each catalog lands in `<name>-<hash>/` and must contain `.tmc/tm-catalog.toc.json`. A token for private repositories can be passed with `pnpm catalogs:download --token <token>` or `CI_JOB_TOKEN`.
+
+## Scripts
+
+| Script                              | Purpose                            |
+| ----------------------------------- | ---------------------------------- |
+| `pnpm dev`                          | Development server on port 5173    |
+| `pnpm build` / `pnpm start`         | Production build / serve           |
+| `pnpm catalogs:download`            | Download and merge catalogs        |
+| `pnpm format` / `pnpm format:check` | Prettier write / check             |
+| `pnpm test`, `pnpm test:coverage`   | Vitest                             |
+| `pnpm clean`                        | Reinstall dependencies and rebuild |
+
+## Project structure
+
+```
+app/                    Routes and UI (App Router)
+  page.tsx              Inventory page
+  details/[id]/         Details page of a TM
+  settings/             API credentials page
+  _components/          React.js components
+lib/
+  services/             apiData (TMC server), localData (bundled catalogs), auth (token)
+  hooks/                Inventory state: data controls, filters, search, pagination
+  utils/                Constants, storage, ID encoding, debug
+ci-cd/                  Catalog downloader and shell helpers
+public/catalog-repos/   Downloaded catalogs and merged .tmc index (client mode)
+next.config.ts          Env mapping, static export, dev API proxy
 ```
 
-Rename a `example.env` file in the repository root to `.env` or create a new `.env` file with your TMC deployment values.
+State is provided by two contexts in `app/layout.tsx`: `AuthenticationGuard` (token, credentials) wrapping `InventoryProvider` (inventory, filters, search, pagination).
 
-#### Backend without authentication
+## CI/CD
 
-```dotenv
-SERVER_AVAILABLE=true
-SERVER_URL=https://example.com:8080
-LOCAL=true
-```
+GitHub Actions in `.github/workflows/`:
 
-#### Backend with authentication
-
-TMC UI uses the OAuth 2.0 client credentials flow when `TOKEN_URL` is configured.
-
-For static builds (`IS_STATIC=true`) with `TMC_SERVER_URL` and `TOKEN_URL` configured,
-set server-only `CLIENT_ID` and `CLIENT_SECRET` environment variables. Static route
-generation uses the same token request as browser authentication and sends the
-resulting Bearer token with every inventory request. Do not expose these credentials
-through client-side environment configuration or commit them to source control.
-
-```dotenv
-SERVER_AVAILABLE=true
-SERVER_URL=http://localhost:8080
-TOKEN_URL=https://auth.example.local/oauth/token
-LOCAL=true
-```
-
-Install the dependencies, prepare the deployment, and start the development server:
-
-```sh
-pnpm install --frozen-lockfile
-sh deploy.sh
-pnpm dev
-```
-
-Open the URL printed by Vite. When authentication is enabled, enter the client ID and client secret on the setup screen. Credentials are stored only for the current browser tab, and the access token is kept in memory.
-
-`LOCAL=true` enables the Vite development proxy. Omit it when the deployed UI can contact `SERVER_URL` directly and the backend allows requests from the UI origin.
-
-## 2. DevOps user
-
-Use this path to deploy TMC UI by configuration only. The same scripts support a backend deployment and two static deployment layouts.
-
-### Deployment patterns
-
-| Pattern                       | Configuration                                                        | TM source                                       |
-| ----------------------------- | -------------------------------------------------------------------- | ----------------------------------------------- |
-| Backend                       | `SERVER_AVAILABLE=true`                                              | A running TMC API at `SERVER_URL`               |
-| Static, separate repositories | `SERVER_AVAILABLE=false`, with `APP_REPO_URL` and `CATALOG_REPO_URL` | Catalog cloned into `public/` during deployment |
-| Static, combined repository   | `SERVER_AVAILABLE=false`, with catalog files already under `public/` | Catalog shipped with the UI repository          |
-
-Client-only deployments support local search and author/manufacturer/repository
-filtering, but not server-side operations or protocol filtering.
-
-### Environment variables
-
-Create `.env` in the deployment working directory. Values are read by `deploy.sh` and Vite.
-
-| Variable                    | Required                                                  | Default                                          | Purpose                                                                                 |
-| --------------------------- | --------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| `SERVER_AVAILABLE`          | Yes                                                       | `false`                                          | Selects backend (`true`) or static (`false`) mode. Only these two values are supported. |
-| `SERVER_URL`                | Yes when server available                                 | `http://localhost:8080` for API requests         | TMC API base URL.                                                                       |
-| `TOKEN_URL`                 | Yes when server available with auth.                      | None                                             | OAuth 2.0 token endpoint. Its presence enables the client credentials screen.           |
-| `APP_REPO_URL`              | Yes when the working directory has no UI source           | `https://github.com/wot-oss/tmc-ui.git`          | Repository containing `package.json` and `src/`.                                        |
-| `CATALOG_REPO_URL`          | Yes in static deployment with separate catalog repository | `https://github.com/wot-oss/example-catalog.git` | Repository containing the static catalog.                                               |
-| `LOCAL`                     | No                                                        | `false`                                          | Uses the Vite API proxy when set to `true`.                                             |
-| `EDITDOR_URL`               | No                                                        | `https://eclipse-editdor.github.io/editdor/`     | Target for the **Open with EdiTDor** action.                                            |
-| `PLAYGROUND_URL`            | No                                                        | `https://playground.thingweb.io/`                | Target for the **Open with TD Playground** action.                                      |
-| `CREDENTIALS_SETUP_MESSAGE` | No                                                        | Empty                                            | Operator guidance shown on the credentials screen.                                      |
-
-Example backend deployment:
-
-```dotenv
-SERVER_AVAILABLE=true
-SERVER_URL=https://tmc.example.com
-TOKEN_URL=https://auth.example.com/oauth/token
-CREDENTIALS_SETUP_MESSAGE=Contact the platform team to request access.
-```
-
-Example static deployment with separate repositories:
-
-```dotenv
-APP_REPO_URL=https://github.com/wot-oss/tmc-ui.git
-CATALOG_REPO_URL=https://github.com/your-org/your-catalog.git
-SERVER_AVAILABLE=false
-```
-
-### Deployment scripts
-
-Run the complete preparation flow with:
-
-```sh
-sh deploy.sh
-```
-
-The script:
-
-1. Loads `.env`, or applies the defaults listed above.
-2. Fetches `APP_REPO_URL` when `package.json` or `src/` is missing from the working directory.
-3. Verifies that `public/` exists.
-4. In static mode, fetches `CATALOG_REPO_URL` unless `public/.tmc/` already exists.
-5. Validates the required static catalog files.
-
-The scripts under `ci-cd/` can also be used independently:
-
-- `pnpm run download-catalog` reads a comma-separated `CATALOG_REPO_URLS` from the environment or the root `.env` file. It downloads each catalog into its own stable, URL-derived subdirectory under `public/catalog-repos/`. Missing Git repositories are cloned with their metadata retained; existing repositories are updated with `git pull --ff-only`. Older downloads without `.git` must be moved outside `public/catalog-repos/` before rerunning to clone them again. S3 catalogs use `aws s3 sync` on every run, with `--delete` for existing downloads to remove files deleted upstream. Failed downloads are cleaned up. The Next.js Pages workflow uses this command; the legacy deployment scripts above are separate.
-- `ci-cd/fetchRepository.sh <repository-url> <destination>` performs a shallow clone and removes repository metadata before the files are copied into the deployment workspace.
-- `ci-cd/validateRequiredFiles.sh <catalog-directory>` validates the static catalog contract.
-
-The download command treats `public/catalog-repos/` as a managed directory. After validating the configured URLs, it first deletes all subdirectories and directory symlinks not associated with those URLs, except the merged `.tmc/` folder. This also removes local changes in unconfigured repositories and abandoned temporary directories; do not keep unrelated folders there. Empty or invalid URL configuration fails before deletion. Configured repositories are then updated or cloned. Deletions and completed updates are not rolled back if a later operation fails.
-
-After all configured downloads succeed, `download-catalog` rebuilds `public/catalog-repos/.tmc/` from their root `.tmc/` folders. It combines the `data` arrays in `tm-catalog.toc.json`, updates the merged creation timestamp, and deduplicates lines in `.txt` files and `.tmcignore`. Each model and version receives a `repo` field containing its stable, URL-derived source directory name (for example, `example-catalog-a32da3c49684`). The static UI derives repository filter options from these fields, keeping identically named models from different repositories distinguishable. Other files and subdirectories are copied, with later sources taking precedence on filename collisions. Relative content links remain unchanged. Only the currently configured sources are included, and the previous merged folder is kept if preparing the new metadata fails.
-
-Every configured catalog must provide `.tmc/tm-catalog.toc.json` with a `data` array; a missing or invalid index fails the merge rather than silently excluding that repository.
-
-For example, set this in `.env`, then run `pnpm run download-catalog`:
-
-```dotenv
-CATALOG_REPO_URLS=https://github.com/wot-oss/example-catalog.git,https://gitlab.com/your-org/catalog.git,s3://your-bucket/catalog-prefix/
-```
-
-For private HTTPS catalogs on `code.siemens.com`, pass a GitLab job token with `npm run catalogs:download -- --token "$CI_JOB_TOKEN"` (shell syntax), or set `CI_JOB_TOKEN` in the environment or root `.env` file. The `--token` argument takes precedence. Authentication uses the `gitlab-ci-token` username for clones and pulls; the supplied token is not retained in the saved origin URL. Other hosts continue to use your configured Git credentials.
-
-GitHub and GitLab sources must be cloneable repository URLs and require Git on `PATH`; private repositories use your configured Git credentials. S3 sources support `s3://bucket/prefix/` and standard AWS S3 HTTPS bucket/prefix URLs, and require the AWS CLI on `PATH` with credentials and region configured (for example via `aws configure` or standard AWS environment variables). Presigned object URLs are not supported. The command requires Node.js 22.20 or newer and does not install these tools.
-
-For a complete local setup that checks Node.js and pnpm, prepares the deployment, installs dependencies, builds, and starts Vite preview, run:
-
-```sh
-sh setup-local.sh
-```
-
-### Static catalog contract
-
-A static catalog repository must contain `.tmc/` at its root with these files:
-
-```text
-.tmc/
-|-- manufacturers.txt
-|-- mpns.txt
-|-- protocols.txt
-|-- tm-catalog.toc.json
-`-- tmnames.txt
-```
-
-The deployment fails when any required file is missing.
-
-### CI/CD
-
-The repository provides these GitHub Actions workflows:
-
-- `.github/workflows/deploy-gh-pages.yml` prepares and publishes the application for GitHub Pages.
-- `.github/workflows/integration-tests.yml` runs deployment-mode integration tests.
-- `.github/workflows/code-format.yml` checks source formatting.
-
-For GitHub Pages, configure the `github-pages` environment under **Settings > Environments > github-pages** and select the branch that may deploy. See the [GitHub Pages documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
-
-For GitLab Pages, call `deploy.sh` from `.gitlab-ci.yml`. Keep `ci-cd/fetchRepository.sh` and `ci-cd/validateRequiredFiles.sh` available at the paths expected by the deployment script.
-
-<img src="ci-cd/deploy_doc.drawio.png" alt="Deploy workflow" width="800" />
-
-## 3. Developer
-
-Use this section when changing application behavior or contributing to the codebase.
-
-### Development commands
-
-```sh
-pnpm install          # Install dependencies
-pnpm dev              # Start the Vite development server
-pnpm build            # Create a production build
-pnpm test             # Run Vitest in watch mode
-pnpm test:coverage    # Run all tests with coverage
-pnpm format           # Format the repository
-pnpm format:check     # Check formatting without modifying files
-```
-
-The test suite is under `src/__tests__/`. Deployment tests cover the three supported patterns:
-
-- `deployments/backend-no-auth/`
-- `deployments/backend-with-auth/`
-- `deployments/static/`
-
-Tests use Vitest, jsdom, and React Testing Library. Shared test setup is in `src/__tests__/setup.ts`, and deployment helpers are in `src/__tests__/deployments/helpers.tsx`.
-
-### Deployment selection
-
-Vite reads the environment and defines the deployment mode consumed by the React application:
-
-- `SERVER_AVAILABLE`: load inventory, filters, and Thing Models from the TMC API.
-- `TYPE_TMC-UI-CATALOG`: load a static catalog fetched from a separate repository.
-- `TYPE_CATALOG-TMC-UI`: load static catalog files already included with the UI.
-
-Keep changes compatible with all three modes. Backend behavior lives in `src/services/apiData.ts`; static-file behavior lives in `src/services/localData.ts`.
-
-### Authentication flow
-
-Authentication is enabled only when backend mode, `SERVER_URL`, and `TOKEN_URL` are all configured.
-
-```mermaid
----
-config:
-  theme: redux
----
-flowchart TB
-    n1["layout.tsx"] -- serverUrl, tokenUrl --> n2["AuthenticationGuard.tsx"]
-    n2 --> n3(["!!serverUrl &amp;&amp; !!tokenUrl"])
-    n3 -- no --> n5["App without authentication"]
-    n3 -- yes --> n4["Access the local store"]
-    n4 -- clientId, clientSecret --> n6(["!!clientId &amp;&amp; !!clientSecret"])
-    n6 -- no --> n8["AuthenticationForm.tsx"]
-    n8 -- clientId, clientSecret, seedToken --> n9(["!!seedToken"])
-    n6 -- yes --> n9
-    n9 -- no --> n10["requestClientCredentialsToken()"]
-    n9 -- yes --> n11["AuthProvider.tsx"]
-    n10 -- token --> n9
-
-    n1@{ shape: rect}
-  style n11 fill:#dcffdc,color:#000
-```
-
-1. `src/App.tsx` decides whether credentials are required and blocks catalog routes until validation succeeds.
-2. `src/services/auth.ts` requests a token with the OAuth 2.0 client credentials grant.
-3. `src/hooks/useClientCredentialsToken.ts` owns in-memory token state and expiry handling.
-4. `src/context/AuthContext.tsx` exposes the authorization header and authentication state to the application.
-5. Credentials use `sessionStorage`; the access token is never persisted in browser storage.
-
-The Settings page allows credentials to be reviewed and replaced during the session. Stored credentials are revalidated at startup, and failed validation returns the user to the setup form.
-
-### `postMessage` integration
-
-The **Open with** action in `src/components/DialogAction.tsx` opens EdiTDor or TD Playground and waits for the target application to announce that it is ready.
-
-The receiving application sends this message to its opener:
-
-```js
-window.opener?.postMessage({ type: 'APPLICATION_READY' }, '<tmc-ui-origin>');
-```
-
-TMC UI validates both `event.origin` and `event.source`, then sends:
-
-```js
-{
-  type: 'LOAD_TD',
-  description: '<thing-title-or-id>',
-  payload: '<formatted-thing-description-json>'
-}
-```
-
-The receiving application must parse `payload` as JSON. TMC UI uses the configured application's origin as the `postMessage` target and marks the action as failed if the ready message is not received within 10 seconds.
-
-### Codebase structure
-
-```text
-src/
-├── alerts/       Success and error feedback
-├── components/   Reusable application and base UI components
-├── context/      Authentication and filter providers
-├── hooks/        Context access, token lifecycle, filters, and image loading
-├── pages/        Route-level screens and data-loading layouts
-├── services/     Backend API, static catalog, and authentication clients
-├── utils/        Constants, string helpers, theme state, and shared utilities
-└── __tests__/    Unit and deployment-mode tests
-```
-
-Service responsibilities:
-
-- `apiData.ts` builds backend inventory queries and fetches inventory and Thing Models.
-- `localData.ts` loads inventory, filters, and Thing Models from static files.
-- `auth.ts` performs token requests and normalizes token expiry.
-
-Context responsibilities:
-
-- `AuthContext` exposes token state, the authorization header, and the active API base URL. Components access it through `useAuth`.
-- `FilterContext` loads filter values from either the backend or static files and exposes them through `useFilters`.
-- Shared context types and context objects are declared in `src/context/index.ts`.
-
-### Theme architecture
-
-Theme colors are defined as hexadecimal CSS custom properties in `src/theme.css`:
-
-- Shared values are declared in `:root`.
-- Dark defaults are declared in `:root, html.dark`.
-- Light overrides are declared in `html.light`.
-
-`tailwind.config.cjs` maps semantic Tailwind tokens directly to those variables. For example, `bg-surface-panel`, `text-text-primary`, and `border-border-default` resolve to `--color-surface-panel`, `--color-text-primary`, and `--color-border-default`. Add or change colors in `src/theme.css`, and update the Tailwind mapping only when introducing a new semantic token.
-
-Runtime theme state is managed by `src/utils/theme.ts` and initialized from `src/main.jsx`.
+- `deploy-gh-pages.yml`: static build (`IS_STATIC=true`) deployed to GitHub Pages. Configured through repository variables `TMC_SERVER_URL`, `TOKEN_URL`, `CATALOG_REPO_URLS`; catalogs are downloaded when no server is set.
+- `code-format.yml`: Prettier check on pull requests.
+- `integration-tests.yml`: currently disabled.
 
 ## License
 
-See [LICENSE](LICENSE).
+[Apache-2.0](LICENSE)
