@@ -10,6 +10,17 @@ import { useInventoryContext } from './InventoryProvider';
 
 const DEFAULT_IMAGE_SRC = `${process.env.BASE_PATH || ''}/default-image.png`;
 
+// Ordered by preference; the first extension with a matching attachment wins.
+const IMAGE_EXTENSION_PRIORITY = ['png', 'webp', 'svg', 'jpg', 'jpeg', 'gif', 'avif', 'bmp'];
+
+const findPriorityImage = (attachments: Attachment[]): Attachment | undefined => {
+  for (const ext of IMAGE_EXTENSION_PRIORITY) {
+    const match = attachments.find((att) => att.name.toLowerCase().endsWith(`.${ext}`));
+    if (match) return match;
+  }
+  return undefined;
+};
+
 const buildItemKey = (itemTM: InventoryItem, i: number): string =>
   `${itemTM.repo}:${itemTM.repo}:${itemTM['schema:mpn']}:row-${i}`;
 
@@ -20,20 +31,20 @@ export const buildItemImageSrc = (
 ): string => {
   if (!attachments) return DEFAULT_IMAGE_SRC;
 
-  const pngImageSrc: Attachment | undefined = attachments.find((att) => att.name.endsWith('png'));
+  const imageAttachment: Attachment | undefined = findPriorityImage(attachments);
 
   if (!process.env.TMC_SERVER_URL) {
-    if (!tmName || !pngImageSrc || !repository) return DEFAULT_IMAGE_SRC;
+    if (!tmName || !imageAttachment || !repository) return DEFAULT_IMAGE_SRC;
 
     return buildLocalCatalogPath(
       repository,
-      pngImageSrc.links?.content ?? `${tmName}/.attachments/${pngImageSrc.name}`,
+      imageAttachment.links?.content ?? `${tmName}/.attachments/${imageAttachment.name}`,
     );
   }
 
-  if (!pngImageSrc) return DEFAULT_IMAGE_SRC;
+  if (!imageAttachment) return DEFAULT_IMAGE_SRC;
 
-  const attachmentLink: string | undefined = pngImageSrc.links?.content;
+  const attachmentLink: string | undefined = imageAttachment.links?.content;
 
   if (!attachmentLink) return DEFAULT_IMAGE_SRC;
 
