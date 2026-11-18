@@ -86,11 +86,12 @@ export default function Details() {
     }) ?? [];
 
   const sections = useMemo(
-    () => [
-      { name: 'Properties', items: Object.keys(TM?.properties ?? {}) },
-      { name: 'Actions', items: Object.keys(TM?.actions ?? {}) },
-      { name: 'Events', items: Object.keys(TM?.events ?? {}) },
-    ],
+    () =>
+      [
+        { name: 'Properties', items: Object.keys(TM?.properties ?? {}) },
+        { name: 'Actions', items: Object.keys(TM?.actions ?? {}) },
+        { name: 'Events', items: Object.keys(TM?.events ?? {}) },
+      ].filter((section) => section.items.length > 0),
     [TM?.actions, TM?.events, TM?.properties],
   );
 
@@ -286,37 +287,35 @@ export default function Details() {
                 </div>
               </dl>
             </section>
-            <section aria-labelledby="details-heading" className="mt-9">
-              <h2 id="details-heading" className="text-text-primary mb-4 text-lg font-semibold">
-                Interactions
-              </h2>
-              <div className="divide-border-subtle border-border-subtle divide-y border-y">
-                {sections.map((detail) => (
-                  <Disclosure key={detail.name} as="div" className="group">
-                    <h3>
-                      <DisclosureButton className="group hover:bg-surface-input-hover focus-visible:outline-focus-ring relative flex w-full cursor-pointer items-center justify-between gap-4 py-4 text-left focus-visible:outline-2">
-                        <span className="group-data-open:text-interactive-accent text-text-primary text-sm font-medium">
-                          {detail.name}
-                        </span>
-                        <span className="text-text-secondary ml-auto text-sm tabular-nums">
-                          {detail.items.length}
-                        </span>
-                        <span className="flex items-center">
-                          <PlusIcon
-                            aria-hidden="true"
-                            className="text-icon-brand group-hover:text-interactive-hover block h-6 w-6 group-data-open:hidden"
-                          />
-                          <MinusIcon
-                            aria-hidden="true"
-                            className="text-icon-brand group-hover:text-interactive-hover hidden h-6 w-6 group-data-open:block"
-                          />
-                        </span>
-                      </DisclosureButton>
-                    </h3>
-                    <DisclosurePanel className="pb-6">
-                      {detail.items.length === 0 ? (
-                        <p className="text-text-secondary pl-5 text-sm">No data to display</p>
-                      ) : (
+            {sections.length > 0 && (
+              <section aria-labelledby="details-heading" className="mt-9">
+                <h2 id="details-heading" className="text-text-primary mb-4 text-lg font-semibold">
+                  Interactions
+                </h2>
+                <div className="divide-border-subtle border-border-subtle divide-y border-y">
+                  {sections.map((detail) => (
+                    <Disclosure key={detail.name} as="div" className="group">
+                      <h3>
+                        <DisclosureButton className="group hover:bg-surface-input-hover focus-visible:outline-focus-ring relative flex w-full cursor-pointer items-center justify-between gap-4 py-4 text-left focus-visible:outline-2">
+                          <span className="group-data-open:text-interactive-accent text-text-primary text-sm font-medium">
+                            {detail.name}
+                          </span>
+                          <span className="text-text-secondary ml-auto text-sm tabular-nums">
+                            {detail.items.length}
+                          </span>
+                          <span className="flex items-center">
+                            <PlusIcon
+                              aria-hidden="true"
+                              className="text-icon-brand group-hover:text-interactive-hover block h-6 w-6 group-data-open:hidden"
+                            />
+                            <MinusIcon
+                              aria-hidden="true"
+                              className="text-icon-brand group-hover:text-interactive-hover hidden h-6 w-6 group-data-open:block"
+                            />
+                          </span>
+                        </DisclosureButton>
+                      </h3>
+                      <DisclosurePanel className="pb-6">
                         <ul
                           role="list"
                           className="text-text-primary marker:text-text-marker list-disc space-y-1 pl-5 text-sm"
@@ -327,12 +326,12 @@ export default function Details() {
                             </li>
                           ))}
                         </ul>
-                      )}
-                    </DisclosurePanel>
-                  </Disclosure>
-                ))}
-              </div>
-            </section>
+                      </DisclosurePanel>
+                    </Disclosure>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </main>
