@@ -34,13 +34,6 @@ export const SideBar = memo(function SideBar({
 }: SideBarProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [changedSinceDraft, setChangedSinceDraft] = useState(changedSince);
-  // The applied value can change outside the picker (e.g. restored from the URL).
-  const [appliedChangedSince, setAppliedChangedSince] = useState(changedSince);
-  if (appliedChangedSince !== changedSince) {
-    setAppliedChangedSince(changedSince);
-    setChangedSinceDraft(changedSince);
-  }
   const [today, setToday] = useState<string>();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -96,7 +89,6 @@ export const SideBar = memo(function SideBar({
             className="rounded px-2"
             onClick={() => {
               formRef.current?.reset();
-              setChangedSinceDraft('');
               resetFilters();
             }}
             variant="plain"
@@ -130,17 +122,11 @@ export const SideBar = memo(function SideBar({
               <Filter label="Changed Since" hint={filterDescriptions.changedSince}>
                 <DatePicker
                   id="filter-changed-since"
-                  value={changedSinceDraft}
+                  value={changedSince}
                   max={today}
-                  onChange={setChangedSinceDraft}
-                />
-                <Button
-                  type="button"
-                  text="Apply"
-                  onClick={() => onChangedSinceChange(changedSinceDraft)}
-                  disabled={changedSinceDraft === changedSince}
-                  className="mt-3 w-full justify-center border"
-                  variant="outlined"
+                  onChange={(value) => {
+                    if (value !== changedSince) onChangedSinceChange(value);
+                  }}
                 />
               </Filter>
             </form>

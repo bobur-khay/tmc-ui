@@ -1,7 +1,13 @@
 'use client';
 import React, { useState, useSyncExternalStore } from 'react';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
+import {
+  CalendarIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/20/solid';
 
 interface DatePickerProps {
   id?: string;
@@ -59,11 +65,15 @@ const DatePicker: React.FC<DatePickerProps> = ({ id, value, max, onChange }) => 
     year: 'numeric',
   });
   const isNextMonthDisabled = !!max && toIsoDate(view.year, view.month + 1, 1) > max;
+  const isNextYearDisabled = !!max && view.year >= Number(max.slice(0, 4));
 
   const shiftMonth = (delta: number) => {
     setView(({ year, month }) => {
       const date = new Date(year, month + delta, 1);
-      return { year: date.getFullYear(), month: date.getMonth() };
+      const next = { year: date.getFullYear(), month: date.getMonth() };
+      // A year jump can overshoot the latest selectable month.
+      if (max && toIsoDate(next.year, next.month, 1) > max) return getInitialMonth(max);
+      return next;
     });
   };
 
@@ -85,24 +95,45 @@ const DatePicker: React.FC<DatePickerProps> = ({ id, value, max, onChange }) => 
         {({ close }) => (
           <>
             <div className="mb-2 flex items-center justify-between">
-              <button
-                type="button"
-                aria-label="Previous month"
-                className="text-interactive-primary hover:bg-surface-input-hover rounded p-1"
-                onClick={() => shiftMonth(-1)}
-              >
-                <ChevronLeftIcon className="size-5" aria-hidden="true" />
-              </button>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  aria-label="Previous year"
+                  className="text-interactive-primary hover:bg-surface-input-hover rounded p-1"
+                  onClick={() => shiftMonth(-12)}
+                >
+                  <ChevronDoubleLeftIcon className="size-5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Previous month"
+                  className="text-interactive-primary hover:bg-surface-input-hover rounded p-1"
+                  onClick={() => shiftMonth(-1)}
+                >
+                  <ChevronLeftIcon className="size-5" aria-hidden="true" />
+                </button>
+              </div>
               <span className="text-text-primary text-sm font-medium">{monthLabel}</span>
-              <button
-                type="button"
-                aria-label="Next month"
-                className="text-interactive-primary hover:bg-surface-input-hover rounded p-1 disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
-                disabled={isNextMonthDisabled}
-                onClick={() => shiftMonth(1)}
-              >
-                <ChevronRightIcon className="size-5" aria-hidden="true" />
-              </button>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  aria-label="Next month"
+                  className="text-interactive-primary hover:bg-surface-input-hover rounded p-1 disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+                  disabled={isNextMonthDisabled}
+                  onClick={() => shiftMonth(1)}
+                >
+                  <ChevronRightIcon className="size-5" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next year"
+                  className="text-interactive-primary hover:bg-surface-input-hover rounded p-1 disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent"
+                  disabled={isNextYearDisabled}
+                  onClick={() => shiftMonth(12)}
+                >
+                  <ChevronDoubleRightIcon className="size-5" aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-7 gap-1 text-center text-xs">
