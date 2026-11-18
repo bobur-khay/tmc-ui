@@ -4,7 +4,10 @@ import type {
   CheckedFilterOptions,
   FilterKey,
   Filters,
+  NextDataControls,
 } from '@/app/_components/data-controls/types';
+import { allFilterKeys, EMPTY_FILTERS } from '@/app/_components/data-controls/types';
+import { usePathname } from 'next/navigation';
 import type { UseDataControlsProps } from './useDataControlsTypes';
 import type { InventoryItem } from '@/app/_components/inventory/types';
 import { useRef, useMemo, useCallback, useEffect, useState } from 'react';
@@ -21,6 +24,35 @@ import { useFilters } from '../filters/useFilters';
 import { DEFAULT_PAGE_SIZE } from '../pagination/paginationTypes';
 
 const DATA_CONTROLS_DEBOUNCE_MS = 800;
+
+function parseUrlDataControls(urlSearch: string): NextDataControls {
+  const params = new URLSearchParams(urlSearch);
+  const controls: NextDataControls = {};
+
+  const search = params.get('search');
+  if (search) controls.search = search;
+
+  const changedSince = params.get('changedSince');
+  if (changedSince && /^\d{4}-\d{2}-\d{2}$/.test(changedSince)) {
+    controls.changedSince = changedSince;
+  }
+
+  const page = Number(params.get('page'));
+  if (Number.isInteger(page) && page > 1) controls.pageNumber = page;
+
+  const filters: Filters = { ...EMPTY_FILTERS };
+  let hasFilters = false;
+  for (const key of allFilterKeys) {
+    if (key === 'changedSince') continue;
+    const values = params.getAll(key).filter(Boolean);
+    if (!values.length) continue;
+    filters[key] = values.map((value) => ({ value, checked: true }));
+    hasFilters = true;
+  }
+  if (hasFilters) controls.filters = filters;
+
+  return controls;
+}
 
 export function useDataControls({
   baseInventory,
@@ -39,6 +71,9 @@ export function useDataControls({
   const abortSignalRef = useRef<AbortController>(new AbortController());
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [changedSince, setChangedSince] = useState('');
+  const pathname = usePathname();
+  const initialUrlDataControls = useRef<NextDataControls | null>(null);
+  const isUrlSyncEnabled = useRef(false);
 
   /* Search */
   const { searchProgress, setSearchProgress, searchQuery, setSearchQuery } = useSearch();
@@ -323,8 +358,32 @@ export function useDataControls({
     ],
   );
 
+  /* Keep the URL in sync with the data controls (must run before the initial load effect) */
+  useEffect(() => {
+    if (!isUrlSyncEnabled.current || pathname !== '/') return;
+    const params = new URLSearchParams();
+    const search = searchQuery.trim();
+    if (search) params.set('search', search);
+    for (const [key, values] of Object.entries(checkedFilterOptions)) {
+      values.forEach((value) => params.append(key, value));
+    }
+    if (changedSince) params.set('changedSince', changedSince);
+    if (pageNumber > 1) params.set('page', String(pageNumber));
+    const query = params.toString();
+    const nextUrlSearch = query ? `?${query}` : '';
+    if (nextUrlSearch !== window.location.search) {
+      window.history.replaceState(null, '', nextUrlSearch || window.location.pathname);
+    }
+  }, [pathname, searchQuery, checkedFilterOptions, changedSince, pageNumber]);
+
   useEffect(() => {
     debug('Starting initial load');
+
+    /* Data controls from the URL */
+    if (pathname === '/') {
+      initialUrlDataControls.current ??= parseUrlDataControls(window.location.search);
+    }
+    isUrlSyncEnabled.current = true;
 
     /* View Preference */
     try {
@@ -352,7 +411,9 @@ export function useDataControls({
     }
 
     /* Load inventory */
-    void applyDataControls({ nextDataControls: { pageSize } });
+    void applyDataControls({
+      nextDataControls: { pageSize, ...initialUrlDataControls.current },
+    });
 
     /* Load available filters */
     const filterController = new AbortController();

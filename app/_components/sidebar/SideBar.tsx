@@ -35,6 +35,12 @@ export const SideBar = memo(function SideBar({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [changedSinceDraft, setChangedSinceDraft] = useState(changedSince);
+  // The applied value can change outside the picker (e.g. restored from the URL).
+  const [appliedChangedSince, setAppliedChangedSince] = useState(changedSince);
+  if (appliedChangedSince !== changedSince) {
+    setAppliedChangedSince(changedSince);
+    setChangedSinceDraft(changedSince);
+  }
   const [today, setToday] = useState<string>();
   const formRef = useRef<HTMLFormElement>(null);
 

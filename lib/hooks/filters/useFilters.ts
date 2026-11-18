@@ -49,7 +49,29 @@ export function useFilters() {
     const loadedFilters: Filters = { ...EMPTY_FILTERS, ...filterOptionResults };
     availableFilters.current = loadedFilters;
     debug('Setting available filters');
-    setFilters(loadedFilters);
+    // Keep options that were checked (e.g. from the URL) before the available options loaded
+    setFilters((current) => {
+      const merged: Filters = { ...loadedFilters };
+      for (const filterKey of Object.keys(current)) {
+        const key = filterKey as FilterKey;
+        const currentOptions = current[key];
+        const loadedOptions = loadedFilters[key];
+        if ('message' in currentOptions) continue;
+        if ('message' in loadedOptions) {
+          merged[key] = currentOptions;
+          continue;
+        }
+        const checked = new Set(
+          currentOptions.filter((opt) => opt.checked).map((opt) => opt.value),
+        );
+        const loadedValues = new Set(loadedOptions.map((opt) => opt.value));
+        merged[key] = [
+          ...loadedOptions.map((opt) => ({ ...opt, checked: checked.has(opt.value) })),
+          ...currentOptions.filter((opt) => opt.checked && !loadedValues.has(opt.value)),
+        ];
+      }
+      return merged;
+    });
   };
 
   return {
