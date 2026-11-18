@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { ChevronUpIcon } from '@heroicons/react/20/solid';
 import Button from '../base/Button';
-import Input from '../base/Input';
+import DatePicker from '../base/DatePicker';
 import { capitalize } from '@/lib/utils/strings';
 import type { FilterKey, Filters } from '../data-controls/types';
 import { Filter } from '../filters/Filter';
@@ -33,7 +33,15 @@ export const SideBar = memo(function SideBar({
 }: SideBarProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [changedSinceDraft, setChangedSinceDraft] = useState(changedSince);
+  const [today, setToday] = useState<string>();
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Computed on the client to use the user's local date and avoid hydration mismatch.
+  useEffect(() => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    setToday(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -92,11 +100,11 @@ export const SideBar = memo(function SideBar({
                 </Filter>
               ))}
             <Filter label="Changed Since" hint={filterDescriptions.changedSince}>
-              <Input
+              <DatePicker
                 id="filter-changed-since"
-                type="date"
                 value={changedSinceDraft}
-                onChange={(event) => setChangedSinceDraft(event.target.value)}
+                max={today}
+                onChange={setChangedSinceDraft}
               />
               <Button
                 type="button"

@@ -147,6 +147,23 @@ export default function Details() {
         })
       : 'Not provided';
 
+  const compareVersions = (a: string, b: string): number => {
+    const av = a.split('.').map(Number);
+    const bv = b.split('.').map(Number);
+    for (let i = 0; i < Math.max(av.length, bv.length); i++) {
+      const diff = (av[i] ?? 0) - (bv[i] ?? 0);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  };
+
+  const latestVersion =
+    TM.versions?.reduce<string | undefined>((latest, current) => {
+      const model = current.version?.model;
+      if (!model) return latest;
+      return !latest || compareVersions(model, latest) > 0 ? model : latest;
+    }, undefined) ?? TM.version?.model;
+
   return (
     <div className="bg-surface-canvas min-h-dvh">
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -220,14 +237,14 @@ export default function Details() {
                     htmlFor="currentVersion"
                     className="text-text-secondary text-sm font-medium"
                   >
-                    Model version
+                    Current version
                   </label>
                   <span className="text-text-tertiary text-right text-xs">
                     {TM.versions?.length ?? 0} versions available
                   </span>
                 </div>
                 <Dropdown
-                  label="version"
+                  label="Current version"
                   id="currentVersion"
                   options={dropdownData}
                   value={id}
@@ -250,8 +267,8 @@ export default function Details() {
                 {[
                   { label: 'Manufacturer', value: TM['schema:manufacturer']?.['schema:name'] },
                   { label: 'Author', value: TM['schema:author']?.['schema:name'] },
-                  { label: 'MPN', value: TM['schema:mpn'] },
-                  { label: 'Current version', value: TM.version?.model },
+                  { label: 'Manufacturer Part Number', value: TM['schema:mpn'] },
+                  { label: 'Latest version', value: latestVersion },
                   { label: 'Last changed', value: lastChangedLabel },
                 ].map(({ label, value }) => (
                   <div key={label} className="min-w-0">
