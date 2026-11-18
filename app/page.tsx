@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useInventoryContext } from './_components/inventory/InventoryProvider';
 import Dropdown from './_components/base/Dropdown';
 import Button from './_components/base/Button';
@@ -12,6 +12,15 @@ import { ErrorUI } from './_components/error/ErrorUI';
 import { INVENTORY_PAGE_SIZE_KEY } from '@/lib/utils/constants';
 import { setLocalStorage } from '@/lib/utils/storage';
 import { PAGE_SIZE_OPTIONS } from '@/lib/hooks/useInventory';
+
+// Matches Tailwind's breakpoint below `md` (48rem).
+const SMALLEST_SCREEN_QUERY = '(width < 48rem)';
+
+const subscribeToSmallestScreen = (callback: () => void) => {
+  const mediaQuery = window.matchMedia(SMALLEST_SCREEN_QUERY);
+  mediaQuery.addEventListener('change', callback);
+  return () => mediaQuery.removeEventListener('change', callback);
+};
 
 // TODO: Implement proper error message display in the app
 // TODO: Implement additive search and filtering. When additively nothing is found tell the user to try exclusive search
@@ -45,6 +54,12 @@ export default function InventoryLoad() {
     paginatedItems,
     lastOpenedTM,
   } = useInventoryContext();
+
+  const isNarrowScreen = useSyncExternalStore(
+    subscribeToSmallestScreen,
+    () => window.matchMedia(SMALLEST_SCREEN_QUERY).matches,
+    () => false,
+  );
 
   useEffect(() => {
     if (isInventoryLoading || !lastOpenedTM.current) return;
@@ -147,7 +162,7 @@ export default function InventoryLoad() {
                   <div
                     role="group"
                     aria-label="Results view"
-                    className="border-border-default flex shrink-0 gap-0.5 rounded border p-0.5"
+                    className="border-border-default hidden shrink-0 gap-0.5 rounded border p-0.5 md:flex"
                   >
                     <Button
                       type="button"
@@ -178,7 +193,7 @@ export default function InventoryLoad() {
                 <InventoryResults
                   items={process.env.TMC_SERVER_URL ? filteredInventoryPage : paginatedItems}
                   loading={isInventoryLoading}
-                  view={inventoryView}
+                  view={isNarrowScreen ? 'grid' : inventoryView}
                 />
                 <Pagination
                   page={pageNumber}
