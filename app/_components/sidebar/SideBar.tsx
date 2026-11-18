@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
-import { ChevronUpIcon } from '@heroicons/react/20/solid';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
+import { FunnelIcon } from '@heroicons/react/24/outline';
 import Button from '../base/Button';
 import DatePicker from '../base/DatePicker';
 import { capitalize } from '@/lib/utils/strings';
@@ -32,6 +33,7 @@ export const SideBar = memo(function SideBar({
   resetFilters,
 }: SideBarProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [changedSinceDraft, setChangedSinceDraft] = useState(changedSince);
   const [today, setToday] = useState<string>();
   const formRef = useRef<HTMLFormElement>(null);
@@ -61,79 +63,100 @@ export const SideBar = memo(function SideBar({
 
   return (
     <div className="w-full">
-      <div className="flex items-baseline justify-between pb-4">
-        <h1 className="text-text-primary text-3xl font-bold tracking-tight">Filters</h1>
-        <Button
-          text="Reset filters"
-          className="rounded px-2"
-          onClick={() => {
-            formRef.current?.reset();
-            setChangedSinceDraft('');
-            resetFilters();
-          }}
-          variant="plain"
-        />
+      <Button
+        type="button"
+        variant="outlined"
+        aria-expanded={isMobileOpen}
+        aria-controls="filters-panel"
+        onClick={() => setIsMobileOpen((open) => !open)}
+        className="w-full justify-between lg:hidden"
+      >
+        <span className="inline-flex items-center gap-2">
+          <FunnelIcon className="size-5" aria-hidden="true" />
+          {isMobileOpen ? 'Hide filters' : 'Show filters'}
+        </span>
+        {isMobileOpen ? (
+          <ChevronUpIcon className="size-5" aria-hidden="true" />
+        ) : (
+          <ChevronDownIcon className="size-5" aria-hidden="true" />
+        )}
+      </Button>
+
+      <div id="filters-panel" className={isMobileOpen ? 'mt-6 lg:mt-0' : 'hidden lg:block'}>
+        <div className="flex items-baseline justify-between pb-4">
+          <h1 className="text-text-primary text-3xl font-bold tracking-tight">Filters</h1>
+          <Button
+            text="Reset filters"
+            className="rounded px-2"
+            onClick={() => {
+              formRef.current?.reset();
+              setChangedSinceDraft('');
+              resetFilters();
+            }}
+            variant="plain"
+          />
+        </div>
+
+        <section aria-labelledby="products-heading" className="pb-15">
+          <div className="flex flex-col gap-x-8 gap-y-10">
+            {/* Filters */}
+            <form ref={formRef} className="lg:block">
+              {Object.entries(filters)
+                .filter(
+                  ([key, options]) =>
+                    key !== 'changedSince' &&
+                    (key !== 'repository' || !Array.isArray(options) || options.length !== 1),
+                )
+                .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+                .map(([key, options]) => (
+                  <Filter
+                    key={key}
+                    label={capitalize(key)}
+                    hint={filterDescriptions[key as FilterKey]}
+                  >
+                    <FilterOptions
+                      sectionId={key as FilterKey}
+                      options={options}
+                      onOptionChange={onFilterCheck}
+                    />
+                  </Filter>
+                ))}
+              <Filter label="Changed Since" hint={filterDescriptions.changedSince}>
+                <DatePicker
+                  id="filter-changed-since"
+                  value={changedSinceDraft}
+                  max={today}
+                  onChange={setChangedSinceDraft}
+                />
+                <Button
+                  type="button"
+                  text="Apply"
+                  onClick={() => onChangedSinceChange(changedSinceDraft)}
+                  disabled={changedSinceDraft === changedSince}
+                  className="mt-3 w-full justify-center border"
+                  variant="outlined"
+                />
+              </Filter>
+            </form>
+          </div>
+        </section>
       </div>
 
-      <section aria-labelledby="products-heading" className="pb-15">
-        <div className="flex flex-col gap-x-8 gap-y-10">
-          {/* Filters */}
-          <form ref={formRef} className="lg:block">
-            {Object.entries(filters)
-              .filter(
-                ([key, options]) =>
-                  key !== 'changedSince' &&
-                  (key !== 'repository' || !Array.isArray(options) || options.length !== 1),
-              )
-              .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-              .map(([key, options]) => (
-                <Filter
-                  key={key}
-                  label={capitalize(key)}
-                  hint={filterDescriptions[key as FilterKey]}
-                >
-                  <FilterOptions
-                    sectionId={key as FilterKey}
-                    options={options}
-                    onOptionChange={onFilterCheck}
-                  />
-                </Filter>
-              ))}
-            <Filter label="Changed Since" hint={filterDescriptions.changedSince}>
-              <DatePicker
-                id="filter-changed-since"
-                value={changedSinceDraft}
-                max={today}
-                onChange={setChangedSinceDraft}
-              />
-              <Button
-                type="button"
-                text="Apply"
-                onClick={() => onChangedSinceChange(changedSinceDraft)}
-                disabled={changedSinceDraft === changedSince}
-                className="mt-3 w-full justify-center border"
-                variant="outlined"
-              />
-            </Filter>
-          </form>
-
-          {showScrollTop && (
-            <div className="fixed bottom-4 left-4 z-50">
-              <Button
-                type="button"
-                onClick={scrollToTop}
-                aria-label="Scroll to top"
-                className="border whitespace-nowrap"
-              >
-                <span className="inline-flex items-center gap-2 p-2">
-                  <ChevronUpIcon className="size-6" aria-hidden="true" />
-                  <span>Back to top</span>
-                </span>
-              </Button>
-            </div>
-          )}
+      {showScrollTop && (
+        <div className="fixed bottom-4 left-4 z-50">
+          <Button
+            type="button"
+            onClick={scrollToTop}
+            aria-label="Scroll to top"
+            className="border whitespace-nowrap"
+          >
+            <span className="inline-flex items-center gap-2 p-2">
+              <ChevronUpIcon className="size-6" aria-hidden="true" />
+              <span>Back to top</span>
+            </span>
+          </Button>
         </div>
-      </section>
+      )}
     </div>
   );
 });

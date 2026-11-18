@@ -72,7 +72,7 @@ export default function InventoryLoad() {
             />
           </div>
         </div>
-        <div className="max-w-screen-3xl flex flex-col gap-12 px-4 sm:px-6 lg:flex-row lg:px-8">
+        <div className="max-w-screen-3xl flex flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:gap-12 lg:px-8">
           {/* Sidebar */}
           <aside className="w-full rounded-lg lg:w-1/4 lg:max-w-72" aria-label="Filters">
             <SideBar
