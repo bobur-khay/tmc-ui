@@ -1,6 +1,10 @@
 import type { NextConfig } from 'next';
 
-const TMC_SERVER_URL = process.env.TMC_SERVER_URL ?? process.env.VITE_SERVER_URL;
+// A trailing slash yields `//authors`, which the server redirects without CORS headers.
+const TMC_SERVER_URL = (process.env.TMC_SERVER_URL ?? process.env.VITE_SERVER_URL)?.replace(
+  /\/+$/,
+  '',
+);
 const BASE_PATH = process.env.BASE_PATH;
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isStaticExport = process.env.IS_STATIC !== 'false';
