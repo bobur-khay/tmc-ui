@@ -140,6 +140,15 @@ export function useDataControls({
     async ({ nextDataControls }: ApplyDataControlsParams) => {
       if (
         !process.env.TMC_SERVER_URL &&
+        !isInitialInventoryLoad.current &&
+        nextDataControls.pageNumber !== undefined &&
+        Object.keys(nextDataControls).length === 1
+      ) {
+        setPageNumber(nextDataControls.pageNumber);
+        return;
+      }
+      if (
+        !process.env.TMC_SERVER_URL &&
         nextDataControls.pageNumber === undefined &&
         (nextDataControls.search !== undefined ||
           nextDataControls.filters !== undefined ||
@@ -352,6 +361,7 @@ export function useDataControls({
       setFilteredInventoryPage,
       setInventoryError,
       setIsInventoryLoading,
+      setPageNumber,
       setSearchProgress,
       setTotalFilteredInventoryCount,
       setTotalInventoryCount,

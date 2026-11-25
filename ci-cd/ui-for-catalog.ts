@@ -76,7 +76,6 @@ async function main() {
   await mergeCatalogMetadata([catalogName]);
 
   logProgress(`[4/4] Installing dependencies and building ${uiFolder}`);
-  process.env.IS_STATIC ??= 'true';
   await pnpm('install', '--frozen-lockfile');
   await pnpm('run', 'build');
   logProgress(`Complete: ${uiFolder} built in ${uiDirectory}`);

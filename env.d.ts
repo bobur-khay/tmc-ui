@@ -12,5 +12,6 @@ declare namespace NodeJS {
     readonly PLAYGROUND_URL?: string;
     readonly TMC_SERVER_URL?: string;
     readonly TOKEN_URL?: string;
+    readonly IS_STATIC?: string;
   }
 }

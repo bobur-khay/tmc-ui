@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 const TMC_SERVER_URL = process.env.TMC_SERVER_URL ?? process.env.VITE_SERVER_URL;
 const BASE_PATH = process.env.BASE_PATH;
 const isDevelopment = process.env.NODE_ENV === 'development';
-const isStaticExport = process.env.IS_STATIC === 'true';
+const isStaticExport = process.env.IS_STATIC !== 'false';
 const useApiProxy = isDevelopment && !!TMC_SERVER_URL;
 const nextConfig: NextConfig = {
   reactStrictMode: false, // TODO: remove
@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   env: {
     BASE_PATH,
     TMC_SERVER_URL,
-    IS_STATIC: process.env.IS_STATIC,
+    IS_STATIC: process.env.IS_STATIC ?? 'true',
     TOKEN_URL: process.env.TOKEN_URL ?? process.env.VITE_TOKEN_URL,
     EDITDOR_URL: process.env.EDITDOR_URL ?? process.env.VITE_EDITDOR_URL,
     PLAYGROUND_URL: process.env.PLAYGROUND_URL ?? process.env.VITE_PLAYGROUND_URL,
