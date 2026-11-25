@@ -1,0 +1,77 @@
+workflow:
+  name: Deploy static Next.js site to Pages
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "refactor/migration-to-nextjs"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
+stages:
+  - build
+  - deploy
+
+default:
+  image: node:24.21.0-bookworm
+
+build:
+  stage: build
+  rules:
+    - when: on_success
+  environment:
+    name: gitlab-pages
+    action: prepare
+  variables:
+    IS_STATIC: 'true'
+  cache:
+    - key:
+        prefix: linux-node24-pnpm
+        files:
+          - pnpm-lock.yaml
+      paths:
+        - .pnpm-store/
+    - key:
+        prefix: linux-node24-nextjs-$CI_PIPELINE_SOURCE-$CI_COMMIT_REF_SLUG
+        files:
+          - pnpm-lock.yaml
+          - next.config.ts
+      paths:
+        - .next/cache/
+  script:
+    - corepack enable
+    - |
+      export TMC_SERVER_URL="${TMC_SERVER_URL:-}"
+      export TOKEN_URL="${TOKEN_URL:-}"
+      export CATALOG_REPO_URLS="${CATALOG_REPO_URLS:-${CATALOG_REPO_URL:-https://github.com/wot-oss/example-catalog.git}}"
+      if [ -z "$TMC_SERVER_URL" ]; then
+        case "$CATALOG_REPO_URLS" in
+          *s3://*|*.s3.amazonaws.com*|*.s3.*.amazonaws.com*)
+            apt-get update
+            apt-get install -y --no-install-recommends awscli
+            ;;
+        esac
+        pnpm run catalogs-for-ui --token "$CI_JOB_TOKEN"
+      fi
+    - pnpm install --frozen-lockfile --store-dir .pnpm-store
+    - |
+      BASE_PATH="$(node -p 'new URL(process.env.CI_PAGES_URL).pathname.replace(/\/+$/, "")')"
+      export BASE_PATH
+      pnpm run build
+    - test -s out/index.html
+  artifacts:
+    paths:
+      - out/
+
+deploy-pages:
+  stage: deploy
+  rules:
+    - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
+  needs:
+    - build
+  resource_group: pages
+  interruptible: false
+  environment:
+    name: gitlab-pages
+    url: $CI_PAGES_URL
+  script:
+    - test -s out/index.html
+  pages:
+    publish: out
