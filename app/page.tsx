@@ -45,6 +45,7 @@ export default function InventoryLoad() {
 
     /* Search */
     searchQuery,
+    debouncedSearch,
     searchProgress,
 
     /* Pagination */
@@ -80,11 +81,7 @@ export default function InventoryLoad() {
           className="mb-10 flex justify-center gap-4 px-4 sm:px-6 md:flex-row md:items-center"
         >
           <div className="w-full md:w-3/4 lg:w-3/5">
-            <Search
-              progressState={searchProgress}
-              query={searchQuery}
-              onSearch={(query) => applyDataControls({ nextDataControls: { search: query } })}
-            />
+            <Search progressState={searchProgress} query={searchQuery} onSearch={debouncedSearch} />
           </div>
         </div>
         <div className="max-w-screen-3xl flex flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:gap-12 lg:px-8">

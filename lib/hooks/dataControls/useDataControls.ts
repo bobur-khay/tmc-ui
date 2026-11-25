@@ -23,6 +23,8 @@ import { PAGE_SIZE_OPTIONS } from '../useInventory';
 import { useFilters } from '../filters/useFilters';
 import { DEFAULT_PAGE_SIZE } from '../pagination/paginationTypes';
 
+const SEARCH_DEBOUNCE_MS = 800;
+
 function parseUrlDataControls(urlSearch: string): NextDataControls {
   const params = new URLSearchParams(urlSearch);
   const controls: NextDataControls = {};
@@ -71,6 +73,7 @@ export function useDataControls({
   const pathname = usePathname();
   const initialUrlDataControls = useRef<NextDataControls | null>(null);
   const isUrlSyncEnabled = useRef(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* Search */
   const { searchProgress, setSearchProgress, searchQuery, setSearchQuery } = useSearch();
@@ -144,15 +147,23 @@ export function useDataControls({
         setPageNumber(nextDataControls.pageNumber);
         return;
       }
-      if (
-        !process.env.TMC_SERVER_URL &&
-        nextDataControls.pageNumber === undefined &&
-        (nextDataControls.search !== undefined ||
-          nextDataControls.filters !== undefined ||
-          nextDataControls.changedSince !== undefined ||
-          nextDataControls.pageSize !== undefined)
-      ) {
-        nextDataControls = { ...nextDataControls, pageNumber: 1 };
+      // This run already includes the latest search query
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      if (nextDataControls.pageNumber === undefined) {
+        const nextPageSize = nextDataControls.pageSize;
+        const isPageSizeOnlyChange =
+          nextPageSize !== undefined &&
+          nextDataControls.search === undefined &&
+          nextDataControls.filters === undefined &&
+          nextDataControls.changedSince === undefined;
+        // On a page size change, go to the page holding the first currently visible item
+        const firstVisibleItemIndex = (pageNumber - 1) * pageSize;
+        nextDataControls = {
+          ...nextDataControls,
+          pageNumber: isPageSizeOnlyChange
+            ? Math.floor(firstVisibleItemIndex / nextPageSize) + 1
+            : 1,
+        };
       }
       debug('Setting inventory to loading');
       setIsInventoryLoading(true);
@@ -363,6 +374,26 @@ export function useDataControls({
     ],
   );
 
+  const applyDataControlsRef = useRef(applyDataControls);
+  useEffect(() => {
+    applyDataControlsRef.current = applyDataControls;
+  }, [applyDataControls]);
+
+  const debouncedSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      if (!query) {
+        void applyDataControlsRef.current({ nextDataControls: { search: query } });
+        return;
+      }
+      searchDebounceRef.current = setTimeout(() => {
+        void applyDataControlsRef.current({ nextDataControls: { search: query } });
+      }, SEARCH_DEBOUNCE_MS);
+    },
+    [setSearchQuery],
+  );
+
   /* Keep the URL in sync with the data controls (must run before the initial load effect) */
   useEffect(() => {
     if (!isUrlSyncEnabled.current || pathname !== '/') return;
@@ -427,6 +458,7 @@ export function useDataControls({
     });
 
     return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
       abortSignalRef.current.abort();
       filterController.abort();
     };
@@ -463,6 +495,7 @@ export function useDataControls({
     /* Search */
     searchQuery,
     setSearchQuery,
+    debouncedSearch,
     searchProgress,
 
     /* Pagination */

@@ -41,6 +41,7 @@ export function useInventory() {
     /* Search */
     searchQuery,
     setSearchQuery,
+    debouncedSearch,
     searchProgress,
     pageNumber,
     setPageNumber,
@@ -96,6 +97,7 @@ export function useInventory() {
     /* Search */
     searchQuery,
     setSearchQuery,
+    debouncedSearch,
     searchProgress,
 
     /* Pagination */
