@@ -1,2 +1,33 @@
 [build]
-  command = 'if [ -z "$TMC_SERVER" ]; then pnpm catalogs-for-ui; fi && pnpm build'
+  # Netlify never uploads dot-prefixed paths, so deploy them as _tmc/_attachments and rewrite below.
+  command = '''
+  if [ -z "$TMC_SERVER" ]; then
+    pnpm catalogs-for-ui &&
+    find public/catalog-repos -depth -type d \( -name .tmc -o -name .attachments \) -exec sh -c 'mv "$0" "${0%/.*}/_${0##*/.}"' {} \;
+  fi && pnpm build
+  '''
+
+[[redirects]]
+  from = "/catalog-repos/.tmc/*"
+  to = "/catalog-repos/_tmc/:splat"
+  status = 200
+  force = true
+
+# Placeholders match one segment each: <repo>/<author>/<manufacturer>/<mpn>[/<optional path>]
+[[redirects]]
+  from = "/catalog-repos/:repo/:a/:b/:c/.attachments/*"
+  to = "/catalog-repos/:repo/:a/:b/:c/_attachments/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/catalog-repos/:repo/:a/:b/:c/:d/.attachments/*"
+  to = "/catalog-repos/:repo/:a/:b/:c/:d/_attachments/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/catalog-repos/:repo/:a/:b/:c/:d/:e/.attachments/*"
+  to = "/catalog-repos/:repo/:a/:b/:c/:d/:e/_attachments/:splat"
+  status = 200
+  force = true
