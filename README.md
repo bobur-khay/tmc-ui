@@ -19,7 +19,7 @@ Three independent switches, all set through environment variables, define how th
 
 | Switch           | Unset                                       | Set                                                |
 | ---------------- | ------------------------------------------- | -------------------------------------------------- |
-| `IS_STATIC`      | Next.js Node server (`next start`)          | Static export to `out/` (any static host)          |
+| `IS_STATIC`      | Static export to `out/` (default, `true`)   | `false`: Next.js Node server (`next start`)        |
 | `TMC_SERVER_URL` | **Client mode**: data from bundled catalogs | **Server mode**: data from the TMC server REST API |
 | `TOKEN_URL`      | No authentication                           | Authentication enabled (server mode only)          |
 
@@ -47,7 +47,9 @@ _Click the diagram to open it full size._
 - Credentials are kept in `sessionStorage` (per browser tab) and can be changed under **API Authentication** (`/settings`).
 - The token endpoint is called from the browser and must allow CORS.
 
-### Static export (`IS_STATIC=true`)
+### Static export (`IS_STATIC=true`, default)
+
+`IS_STATIC` is `'true'` by default: unless it is explicitly set to `false`, the build is a static export.
 
 - `next build` writes a fully static site to `out/` (trailing slashes, unoptimized images).
 - Detail pages are pre-generated for every TM version known at build time: from the local merged index in client mode, or from the TMC server in server mode. New TMs need a rebuild to get a detail page.
@@ -62,7 +64,7 @@ Read from `.env` (see `.env.example`) at **build time** and inlined into the bun
 | ---------------------------- | --------------------------------------------------------------------------------------------------- |
 | `TMC_SERVER_URL`             | Base URL of the TMC server. Enables server mode; client mode when unset.                            |
 | `TOKEN_URL`                  | OAuth2 token endpoint. Enables authentication in server mode.                                       |
-| `IS_STATIC`                  | `true` builds a static export.                                                                      |
+| `IS_STATIC`                  | `true` (default) builds a static export; `false` builds for a Node server (`next start`).           |
 | `BASE_PATH`                  | Sub-path the app is served from (e.g. `/tmc-ui`).                                                   |
 | `CATALOG_REPO_URLS`          | Comma-separated catalog sources for `pnpm catalogs:download` (Git or S3 URLs).                      |
 | `CLIENT_ID`, `CLIENT_SECRET` | Build-time credentials for static export with authentication.                                       |
@@ -86,8 +88,8 @@ cp .env.example .env   # then adjust, see below
 | Client mode           | `CATALOG_REPO_URLS=https://github.com/wot-oss/example-catalog.git` | `pnpm catalogs:download` then `pnpm dev`  |
 | Server mode           | `TMC_SERVER_URL=http://localhost:8080`                             | `pnpm dev`                                |
 | Server mode with auth | additionally `TOKEN_URL=...`                                       | `pnpm dev`                                |
-| Production (Node)     | any of the above                                                   | `pnpm build` then `pnpm start`            |
-| Production (static)   | additionally `IS_STATIC=true`                                      | `pnpm build`, then host the `out/` folder |
+| Production (Node)     | additionally `IS_STATIC=false`                                     | `pnpm build` then `pnpm start`            |
+| Production (static)   | any of the above (`IS_STATIC` defaults to `true`)                  | `pnpm build`, then host the `out/` folder |
 
 The dev server runs on <http://localhost:5173>, `pnpm start` on <http://localhost:3000>.
 

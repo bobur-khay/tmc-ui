@@ -1,0 +1,2 @@
+[build]
+  command = 'if [ "$IS_STATIC" != "false" ]; then pnpm catalogs-for-ui; fi && pnpm build'

@@ -9,7 +9,7 @@ import { buildDetailsId, encodeDetailsId } from '@/lib/utils/details';
 import { DEFAULT_PAGE_SIZE } from '@/lib/hooks/pagination/paginationTypes';
 
 export async function generateStaticParams(): Promise<{ id: string }[]> {
-  if (process.env.IS_STATIC !== 'true') return [];
+  if (process.env.IS_STATIC === 'false') return [];
 
   let inventory: InventoryItem[];
 
