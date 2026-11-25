@@ -21,8 +21,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Pull requests are already tested by tests.yml
+  tests:
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/tests.yml
+
   # Build job
   build:
+    needs: tests
+    # Runs when the tests passed or were skipped (pull requests)
+    if: ${{ !failure() && !cancelled() }}
     environment: github-pages
     runs-on: ubuntu-latest
     env:
@@ -73,7 +81,7 @@ jobs:
 
   # Deployment job
   deploy:
-    if: github.event_name != 'pull_request'
+    if: ${{ github.event_name != 'pull_request' && needs.build.result == 'success' }}
     permissions:
       pages: write
       id-token: write

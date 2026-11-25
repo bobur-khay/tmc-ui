@@ -15,6 +15,12 @@ next-env.d.ts
 dist
 /out
 
+# tests
+/coverage
+/reports
+/test-results
+/playwright-report
+
 .yarn
 /docs
 .env

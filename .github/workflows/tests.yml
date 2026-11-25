@@ -1,12 +1,18 @@
-name: Integration tests
+name: Tests
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  # Lets the deployment workflow run the tests before it deploys
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  integration-tests:
-    if: false #todo: finish tests and enable
+  vitest:
+    name: Unit, component and integration tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,16 +24,69 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22.20.0
+          node-version: 24.21.0
           cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run integration tests with coverage
-        run: pnpm exec vitest run src/__tests__ --coverage
+      - name: Run Vitest with coverage
+        run: pnpm run test:coverage
 
       - name: Upload coverage report
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: integration-coverage
-          path: coverage/
+          name: coverage
+          path: |
+            coverage/
+            reports/
+          if-no-files-found: ignore
+
+  e2e:
+    name: End-to-end tests (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # static: client mode as a static export; server: Node server with a TMC server and authentication
+        mode: [static, server]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox
+
+      - name: Download the example catalog
+        if: matrix.mode == 'static'
+        env:
+          CATALOG_REPO_URLS: https://github.com/wot-oss/example-catalog.git
+        run: pnpm run catalogs-for-ui
+
+      - name: Run Playwright
+        run: pnpm run test:e2e:${{ matrix.mode }}
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-${{ matrix.mode }}
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          if-no-files-found: ignore

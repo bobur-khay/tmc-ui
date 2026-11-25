@@ -128,15 +128,37 @@ These are read from the shell environment, not from `.env`. The other [environme
 
 ## Scripts
 
-| Script                              | Purpose                            |
-| ----------------------------------- | ---------------------------------- |
-| `pnpm dev`                          | Development server on port 5173    |
-| `pnpm build` / `pnpm start`         | Production build / serve           |
-| `pnpm catalogs:download`            | Download and merge catalogs        |
-| `ci-cd/ui-for-catalog.ts`           | Build the UI from inside a catalog |
-| `pnpm format` / `pnpm format:check` | Prettier write / check             |
-| `pnpm test`, `pnpm test:coverage`   | Vitest                             |
-| `pnpm clean`                        | Reinstall dependencies and rebuild |
+| Script                                                 | Purpose                                |
+| ------------------------------------------------------ | -------------------------------------- |
+| `pnpm dev`                                             | Development server on port 5173        |
+| `pnpm build` / `pnpm start`                            | Production build / serve               |
+| `pnpm catalogs:download`                               | Download and merge catalogs            |
+| `ci-cd/ui-for-catalog.ts`                              | Build the UI from inside a catalog     |
+| `pnpm format` / `pnpm format:check`                    | Prettier write / check                 |
+| `pnpm test`                                            | Vitest in watch mode                   |
+| `pnpm test:run`, `pnpm test:coverage`                  | All Vitest suites once / with coverage |
+| `pnpm test:unit`, `test:component`, `test:integration` | A single Vitest suite                  |
+| `pnpm test:e2e`, `test:e2e:static`, `test:e2e:server`  | Playwright end-to-end suites           |
+| `pnpm test:all`                                        | Vitest with coverage, then Playwright  |
+| `pnpm clean`                                           | Reinstall dependencies and rebuild     |
+
+## Testing
+
+| Level       | Location             | Tooling                        | Scope                                                                                                       |
+| ----------- | -------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Unit        | `tests/unit/`        | Vitest                         | Utilities and services (`lib/`), with `fetch` stubbed                                                       |
+| Component   | `tests/component/`   | Vitest, Testing Library, jsdom | Single components and hooks                                                                                 |
+| Integration | `tests/integration/` | Vitest, Testing Library, jsdom | Whole pages inside the app providers, per deployment mode: `static`, `backend-no-auth`, `backend-with-auth` |
+| End-to-end  | `tests/e2e/`         | Playwright (Chromium, Firefox) | The production build in a real browser                                                                      |
+
+The TMC server and the token endpoint are never contacted: `tests/fixtures/tmcServer.ts` fakes them, behind `fetch` in Vitest and at the network layer in Playwright.
+
+The end-to-end suites build the app themselves (this overwrites `.next/` and `out/`) and need the browsers once: `pnpm test:e2e:install`.
+
+- `pnpm test:e2e:static`: client mode as a static export below the base path `/tmc-ui`, served from `out/`. It uses the catalogs in `public/catalog-repos/` (run `pnpm catalogs-for-ui` first) and derives its expectations from that catalog.
+- `pnpm test:e2e:server`: server mode with authentication on the Node server (`next start`).
+
+Reports are written to `coverage/`, `playwright-report/` and, in CI, `reports/` (JUnit).
 
 ## Project structure
 
@@ -151,6 +173,7 @@ lib/
   hooks/                Inventory state: data controls, filters, search, pagination
   utils/                Constants, storage, ID encoding, debug
 ci-cd/                  Catalog downloader (catalog-for-ui) and UI builder for catalogs (ui-for-catalog)
+tests/                  Unit, component, integration and end-to-end tests (see Testing)
 public/catalog-repos/   Downloaded catalogs and merged .tmc index (client mode)
 next.config.ts          Env mapping, static export, dev API proxy
 ```
@@ -161,9 +184,13 @@ State is provided by two contexts in `app/layout.tsx`: `AuthenticationGuard` (to
 
 GitHub Actions in `.github/workflows/`:
 
-- `deploy-gh-pages.yml`: static build (`IS_STATIC=true`) deployed to GitHub Pages. Configured through repository variables `TMC_SERVER_URL`, `TOKEN_URL`, `CATALOG_REPO_URLS`; catalogs are downloaded when no server is set.
+- `deploy-gh-pages.yml`: static build (`IS_STATIC=true`) deployed to GitHub Pages. Configured through repository variables `TMC_SERVER_URL`, `TOKEN_URL`, `CATALOG_REPO_URLS`; catalogs are downloaded when no server is set. Deployments run `tests.yml` first and are skipped when it fails.
 - `code-format.yml`: Prettier check on pull requests.
-- `integration-tests.yml`: currently disabled.
+- `tests.yml`: Vitest with coverage and both Playwright suites, on pull requests and before deployments.
+
+GitLab CI (`.gitlab-ci.yml`) runs the same suites in its `test` stage (`vitest`, `e2e`) before `build` and `deploy`.
+
+Netlify (`netlify.toml`) runs the Vitest suites before the build; a failing test fails the deploy. The Playwright suites are not run on Netlify.
 
 ## License
 
