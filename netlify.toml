@@ -1,2 +1,2 @@
 [build]
-  command = 'if [ "$IS_STATIC" != "false" ]; then pnpm catalogs-for-ui; fi && pnpm build'
+  command = 'if [ -z "$TMC_SERVER" ]; then pnpm catalogs-for-ui; fi && pnpm build'

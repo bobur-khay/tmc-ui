@@ -118,10 +118,10 @@ node --experimental-strip-types ui-for-catalog.ts
 
 The catalog must contain `.tmc/tm-catalog.toc.json`. Add `tmc-ui/` to the catalog's `.gitignore` so the clone is not committed.
 
-| Variable          | Description                                                                         |
-| ----------------- | ----------------------------------------------------------------------------------- |
-| `TMC_UI_REPO_URL` | Git URL of the tmc-ui repository to clone. Default: `https://github.com/wot-oss/tmc-ui.git`. |
-| `TMC_UI_REF`      | Branch or tag to clone. Default: the repository's default branch. Ignored when the clone already exists. |
+| Variable          | Description                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `TMC_UI_REPO_URL` | Git URL of the tmc-ui repository to clone. Default: `https://github.com/wot-oss/tmc-ui.git`.                                 |
+| `TMC_UI_REF`      | Branch or tag to clone. Default: the repository's default branch. Ignored when the clone already exists.                     |
 | `IS_STATIC`       | Defaults to `true` in this script, so the build is a static export in `tmc-ui/out/`. Set to `false` for a Node server build. |
 
 These are read from the shell environment, not from `.env`. The other [environment variables](#environment-variables), such as `BASE_PATH`, are passed through to the build; leave `TMC_SERVER_URL` unset so the UI runs in client mode.
