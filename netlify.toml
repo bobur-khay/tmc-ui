@@ -1,7 +1,7 @@
 [build]
   # Netlify never uploads dot-prefixed paths, so deploy them as _tmc/_attachments and rewrite below.
   # Keep on one line: CRLF line endings inside the command break bash.
-  command = '''if [ -z "$TMC_SERVER" ]; then pnpm catalogs-for-ui && find public/catalog-repos -depth -type d \( -name .tmc -o -name .attachments \) -exec sh -c 'mv "$0" "${0%/.*}/_${0##*/.}"' {} \; ; fi && pnpm build'''
+  command = '''if [ -z "$TMC_SERVER_URL" ]; then pnpm catalogs-for-ui && find public/catalog-repos -depth -type d \( -name .tmc -o -name .attachments \) -exec sh -c 'mv "$0" "${0%/.*}/_${0##*/.}"' {} \; ; fi && pnpm build'''
 
 [[redirects]]
   from = "/catalog-repos/.tmc/*"
