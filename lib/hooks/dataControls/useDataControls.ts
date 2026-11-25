@@ -23,8 +23,6 @@ import { PAGE_SIZE_OPTIONS } from '../useInventory';
 import { useFilters } from '../filters/useFilters';
 import { DEFAULT_PAGE_SIZE } from '../pagination/paginationTypes';
 
-const DATA_CONTROLS_DEBOUNCE_MS = 800;
-
 function parseUrlDataControls(urlSearch: string): NextDataControls {
   const params = new URLSearchParams(urlSearch);
   const controls: NextDataControls = {};
@@ -69,7 +67,6 @@ export function useDataControls({
 }: UseDataControlsProps) {
   const { authorizationHeader } = useAuth();
   const abortSignalRef = useRef<AbortController>(new AbortController());
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [changedSince, setChangedSince] = useState('');
   const pathname = usePathname();
   const initialUrlDataControls = useRef<NextDataControls | null>(null);
@@ -166,185 +163,183 @@ export function useDataControls({
         const [, setState] = dataControlToStateMap[key];
         setState(nextDataControls[key]);
       });
-      timeoutRef.current && clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(async () => {
-        const nextDataControlValues: Record<DataControlType, any> = {
-          search: (nextDataControls.search ?? searchQuery).trim(),
-          filters: nextDataControls.filters
-            ? getCheckedFilterOptions(nextDataControls.filters)
-            : checkedFilterOptions,
-          changedSince: nextDataControls.changedSince ?? changedSince,
-          pageNumber: nextDataControls.pageNumber ?? pageNumber,
-          pageSize: nextDataControls.pageSize ?? pageSize,
-        };
+      const nextDataControlValues: Record<DataControlType, any> = {
+        search: (nextDataControls.search ?? searchQuery).trim(),
+        filters: nextDataControls.filters
+          ? getCheckedFilterOptions(nextDataControls.filters)
+          : checkedFilterOptions,
+        changedSince: nextDataControls.changedSince ?? changedSince,
+        pageNumber: nextDataControls.pageNumber ?? pageNumber,
+        pageSize: nextDataControls.pageSize ?? pageSize,
+      };
 
-        abortSignalRef.current.abort();
-        const controller = new AbortController();
-        abortSignalRef.current = controller;
-        searchQuery.trim() && setSearchProgress(80);
-        try {
-          let nextFilteredInventory: InventoryItem[];
-          let nextFilteredInventoryCount: number;
-          if (process.env.TMC_SERVER_URL) {
-            //Server Filtering
-            debug('Applying server filters');
-            const hasSearchDataControl = nextDataControlValues.search.length > 0;
-            const apiFilters = {
-              ...nextDataControlValues.filters,
-              ...(nextDataControlValues.changedSince
-                ? { changedSince: nextDataControlValues.changedSince.replace(/-/g, '') }
-                : {}),
-            };
-            const hasFilterControls = Object.keys(apiFilters).length > 0;
-            const isSearchNFilter = hasSearchDataControl && hasFilterControls;
+      abortSignalRef.current.abort();
+      const controller = new AbortController();
+      abortSignalRef.current = controller;
+      searchQuery.trim() && setSearchProgress(80);
+      try {
+        let nextFilteredInventory: InventoryItem[];
+        let nextFilteredInventoryCount: number;
+        if (process.env.TMC_SERVER_URL) {
+          //Server Filtering
+          debug('Applying server filters');
+          const hasSearchDataControl = nextDataControlValues.search.length > 0;
+          const apiFilters = {
+            ...nextDataControlValues.filters,
+            ...(nextDataControlValues.changedSince
+              ? { changedSince: nextDataControlValues.changedSince.replace(/-/g, '') }
+              : {}),
+          };
+          const hasFilterControls = Object.keys(apiFilters).length > 0;
+          const isSearchNFilter = hasSearchDataControl && hasFilterControls;
 
-            const [filterResponse, searchResponse] = await Promise.all([
-              isInitialInventoryLoad.current || !isSearchNFilter || hasFilterControls
-                ? fetchApiDataInventory(
-                    process.env.API_BASE,
-                    {
-                      signal: controller.signal,
-                      authorizationHeader,
-                      filters: apiFilters,
-                    },
-                    isSearchNFilter ? undefined : nextDataControlValues.pageNumber,
-                    isSearchNFilter ? undefined : nextDataControlValues.pageSize,
-                  )
-                : undefined,
-              hasSearchDataControl
-                ? fetchApiDataInventory(
-                    process.env.API_BASE,
-                    {
-                      signal: controller.signal,
-                      authorizationHeader,
-                      search: nextDataControlValues.search,
-                    },
-                    isSearchNFilter ? undefined : nextDataControlValues.pageNumber,
-                    isSearchNFilter ? undefined : nextDataControlValues.pageSize,
-                  )
-                : undefined,
-            ]);
-            debug('Filter response:', filterResponse);
-            debug('Search response:', searchResponse);
+          const [filterResponse, searchResponse] = await Promise.all([
+            isInitialInventoryLoad.current || !isSearchNFilter || hasFilterControls
+              ? fetchApiDataInventory(
+                  process.env.API_BASE,
+                  {
+                    signal: controller.signal,
+                    authorizationHeader,
+                    filters: apiFilters,
+                  },
+                  isSearchNFilter ? undefined : nextDataControlValues.pageNumber,
+                  isSearchNFilter ? undefined : nextDataControlValues.pageSize,
+                )
+              : undefined,
+            hasSearchDataControl
+              ? fetchApiDataInventory(
+                  process.env.API_BASE,
+                  {
+                    signal: controller.signal,
+                    authorizationHeader,
+                    search: nextDataControlValues.search,
+                  },
+                  isSearchNFilter ? undefined : nextDataControlValues.pageNumber,
+                  isSearchNFilter ? undefined : nextDataControlValues.pageSize,
+                )
+              : undefined,
+          ]);
+          debug('Filter response:', filterResponse);
+          debug('Search response:', searchResponse);
 
-            if (filterResponse && searchResponse) {
-              debug('Both filter and search applied');
-              const searchTmNames = new Set(
-                (searchResponse.data as InventoryItem[]).map((item) => item.tmName),
-              );
-              nextFilteredInventory = (filterResponse.data as InventoryItem[]).filter((item) =>
-                searchTmNames.has(item.tmName),
-              );
-              nextFilteredInventoryCount = nextFilteredInventory.length;
-              const pageStart =
-                (nextDataControlValues.pageNumber - 1) * nextDataControlValues.pageSize;
-              nextFilteredInventory = nextFilteredInventory.slice(
-                pageStart,
-                pageStart + nextDataControlValues.pageSize,
-              );
-            } else {
-              const response = filterResponse ?? searchResponse;
-              nextFilteredInventory = (response?.data as InventoryItem[] | undefined) ?? [];
-              nextFilteredInventoryCount = response?.meta.page.totalElements ?? 0;
-            }
-          } else {
-            // Client Filtering
-            debug('Applying client filters');
-            let inventory = baseInventory;
-            if (isInitialInventoryLoad.current) {
-              const response = await fetchLocalDataInventory(controller.signal);
-              inventory = response;
-              setBaseInventory(inventory);
-              setTotalInventoryCount(inventory.length);
-            }
-            const selectedFilters: CheckedFilterOptions = nextDataControlValues.filters;
-            const query = nextDataControlValues.search.toLowerCase();
-            const changedSinceDate = nextDataControlValues.changedSince.replace(/-/g, '');
-            nextFilteredInventory = inventory.filter((item) => {
-              const matchesChangedSince =
-                !changedSinceDate ||
-                item.versions?.some(
-                  (version) =>
-                    /^\d{14}$/.test(version.timestamp) &&
-                    version.timestamp.slice(0, 8) >= changedSinceDate,
-                );
-              const matchesCatalog =
-                !selectedFilters.repository?.length ||
-                selectedFilters.repository?.includes(item.repo);
-              const matchesManufacturer =
-                !selectedFilters.manufacturer?.length ||
-                selectedFilters.manufacturer.some(
-                  (manufacturer) =>
-                    manufacturer.toLowerCase() ===
-                    item['schema:manufacturer']?.['schema:name']?.toLowerCase(),
-                );
-              const matchesAuthor =
-                !selectedFilters.author?.length ||
-                selectedFilters.author.some(
-                  (author) =>
-                    author.toLowerCase() === item['schema:author']?.['schema:name']?.toLowerCase(),
-                );
-              const matchesProtocol =
-                !selectedFilters.protocol?.length ||
-                selectedFilters.protocol.some((protocol) =>
-                  item.protocols?.some(
-                    (itemProtocol) => itemProtocol.toLowerCase() === protocol.toLowerCase(),
-                  ),
-                );
-              const matchesSearch =
-                !query ||
-                [
-                  item.name,
-                  item.tmName,
-                  item['schema:mpn'],
-                  item['schema:description'],
-                  item['schema:author']?.['schema:name'],
-                  item['schema:manufacturer']?.['schema:name'],
-                  ...(item.versions?.map((version) => version.description) ?? []),
-                ].some((value) => value?.toLowerCase().includes(query));
-              return (
-                matchesChangedSince &&
-                matchesCatalog &&
-                matchesManufacturer &&
-                matchesAuthor &&
-                matchesProtocol &&
-                matchesSearch
-              );
-            });
-            nextFilteredInventoryCount = nextFilteredInventory.length;
-          }
-          if (controller.signal.aborted) return;
-          debug('Setting total filtered inventory count:', nextFilteredInventoryCount);
-          setTotalFilteredInventoryCount(nextFilteredInventoryCount);
-          if (isInitialInventoryLoad.current) {
-            debug('Initial load complete, setting base inventory');
-            if (process.env.TMC_SERVER_URL) setBaseInventory(nextFilteredInventory);
-            debug('Setting total inventory count: ', nextFilteredInventoryCount);
-            if (process.env.TMC_SERVER_URL) setTotalInventoryCount(nextFilteredInventoryCount);
-            isInitialInventoryLoad.current = false;
-          }
-          setFilteredInventoryPage(nextFilteredInventory);
-          if (!nextFilteredInventory.length) {
-            setInventoryError(
-              isInitialInventoryLoad.current
-                ? 'The inventory is empty'
-                : 'No items match these filters',
+          if (filterResponse && searchResponse) {
+            debug('Both filter and search applied');
+            const searchTmNames = new Set(
+              (searchResponse.data as InventoryItem[]).map((item) => item.tmName),
             );
+            nextFilteredInventory = (filterResponse.data as InventoryItem[]).filter((item) =>
+              searchTmNames.has(item.tmName),
+            );
+            nextFilteredInventoryCount = nextFilteredInventory.length;
+            const pageStart =
+              (nextDataControlValues.pageNumber - 1) * nextDataControlValues.pageSize;
+            nextFilteredInventory = nextFilteredInventory.slice(
+              pageStart,
+              pageStart + nextDataControlValues.pageSize,
+            );
+          } else {
+            const response = filterResponse ?? searchResponse;
+            nextFilteredInventory = (response?.data as InventoryItem[] | undefined) ?? [];
+            nextFilteredInventoryCount = response?.meta.page.totalElements ?? 0;
           }
-          return nextFilteredInventory;
-        } catch (err: unknown) {
-          console.error(err instanceof Response ? await err.text() : err);
-          if (controller.signal.aborted) {
-            return;
+        } else {
+          // Client Filtering
+          debug('Applying client filters');
+          let inventory = baseInventory;
+          if (isInitialInventoryLoad.current) {
+            const response = await fetchLocalDataInventory(controller.signal);
+            if (controller.signal.aborted) return;
+            inventory = response;
+            setBaseInventory(inventory);
+            setTotalInventoryCount(inventory.length);
           }
-          setInventoryError("That didn't work. Please try again.");
-        } finally {
-          if (!controller.signal.aborted) {
-            searchQuery.trim() && setSearchProgress(100);
-            setIsInventoryLoading(false);
-          }
+          const selectedFilters: CheckedFilterOptions = nextDataControlValues.filters;
+          const query = nextDataControlValues.search.toLowerCase();
+          const changedSinceDate = nextDataControlValues.changedSince.replace(/-/g, '');
+          nextFilteredInventory = inventory.filter((item) => {
+            const matchesChangedSince =
+              !changedSinceDate ||
+              item.versions?.some(
+                (version) =>
+                  /^\d{14}$/.test(version.timestamp) &&
+                  version.timestamp.slice(0, 8) >= changedSinceDate,
+              );
+            const matchesCatalog =
+              !selectedFilters.repository?.length ||
+              selectedFilters.repository?.includes(item.repo);
+            const matchesManufacturer =
+              !selectedFilters.manufacturer?.length ||
+              selectedFilters.manufacturer.some(
+                (manufacturer) =>
+                  manufacturer.toLowerCase() ===
+                  item['schema:manufacturer']?.['schema:name']?.toLowerCase(),
+              );
+            const matchesAuthor =
+              !selectedFilters.author?.length ||
+              selectedFilters.author.some(
+                (author) =>
+                  author.toLowerCase() === item['schema:author']?.['schema:name']?.toLowerCase(),
+              );
+            const matchesProtocol =
+              !selectedFilters.protocol?.length ||
+              selectedFilters.protocol.some((protocol) =>
+                item.protocols?.some(
+                  (itemProtocol) => itemProtocol.toLowerCase() === protocol.toLowerCase(),
+                ),
+              );
+            const matchesSearch =
+              !query ||
+              [
+                item.name,
+                item.tmName,
+                item['schema:mpn'],
+                item['schema:description'],
+                item['schema:author']?.['schema:name'],
+                item['schema:manufacturer']?.['schema:name'],
+                ...(item.versions?.map((version) => version.description) ?? []),
+              ].some((value) => value?.toLowerCase().includes(query));
+            return (
+              matchesChangedSince &&
+              matchesCatalog &&
+              matchesManufacturer &&
+              matchesAuthor &&
+              matchesProtocol &&
+              matchesSearch
+            );
+          });
+          nextFilteredInventoryCount = nextFilteredInventory.length;
         }
-      }, DATA_CONTROLS_DEBOUNCE_MS);
+        if (controller.signal.aborted) return;
+        debug('Setting total filtered inventory count:', nextFilteredInventoryCount);
+        setTotalFilteredInventoryCount(nextFilteredInventoryCount);
+        if (isInitialInventoryLoad.current) {
+          debug('Initial load complete, setting base inventory');
+          if (process.env.TMC_SERVER_URL) setBaseInventory(nextFilteredInventory);
+          debug('Setting total inventory count: ', nextFilteredInventoryCount);
+          if (process.env.TMC_SERVER_URL) setTotalInventoryCount(nextFilteredInventoryCount);
+          isInitialInventoryLoad.current = false;
+        }
+        setFilteredInventoryPage(nextFilteredInventory);
+        if (!nextFilteredInventory.length) {
+          setInventoryError(
+            isInitialInventoryLoad.current
+              ? 'The inventory is empty'
+              : 'No items match these filters',
+          );
+        }
+        return nextFilteredInventory;
+      } catch (err: unknown) {
+        console.error(err instanceof Response ? await err.text() : err);
+        if (controller.signal.aborted) {
+          return;
+        }
+        setInventoryError("That didn't work. Please try again.");
+      } finally {
+        if (!controller.signal.aborted) {
+          searchQuery.trim() && setSearchProgress(100);
+          setIsInventoryLoading(false);
+        }
+      }
     },
     [
       authorizationHeader,
@@ -432,9 +427,6 @@ export function useDataControls({
     });
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
       abortSignalRef.current.abort();
       filterController.abort();
     };
