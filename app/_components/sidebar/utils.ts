@@ -75,9 +75,7 @@ export async function getAvailableFilterOptionsServer(
   authorizationHeader: string,
   signal?: AbortSignal,
 ): Promise<AvailableFilters> {
-  const headers = {
-    Authorization: authorizationHeader,
-  };
+  const headers = authorizationHeader ? { Authorization: authorizationHeader } : undefined;
 
   const filterOptionParams: Record<AvailableFilterKey, FilterOptionParam> = {
     author: {
