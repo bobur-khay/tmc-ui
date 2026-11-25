@@ -468,12 +468,17 @@ export function useDataControls({
   const toggleFilter = useCallback(
     async (filterType: FilterKey, optionValue: string) => {
       if ('message' in filters[filterType]) return;
+      const singleSelect = filterType === 'repository';
       await applyDataControls({
         nextDataControls: {
           filters: {
             ...filters,
             [filterType]: filters[filterType].map((opt) =>
-              opt.value === optionValue ? { ...opt, checked: !opt.checked } : opt,
+              opt.value === optionValue
+                ? { ...opt, checked: !opt.checked }
+                : singleSelect
+                  ? { ...opt, checked: false }
+                  : opt,
             ),
           },
         },
