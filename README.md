@@ -93,13 +93,36 @@ The dev server runs on <http://localhost:5173>, `pnpm start` on <http://localhos
 
 ### Downloading catalogs
 
-`pnpm catalogs:download` (`ci-cd/catalog.ts`) synchronizes `public/catalog-repos/` with `CATALOG_REPO_URLS`:
+`pnpm catalogs:download` (`ci-cd/catalog-for-ui.ts`) synchronizes `public/catalog-repos/` with `CATALOG_REPO_URLS`:
 
 1. Removes catalog folders that are no longer configured.
 2. Clones missing catalogs (`git clone --depth 1`) or updates existing ones (`git pull --ff-only`); S3 sources (`s3://bucket/prefix` or S3 HTTPS URLs) use `aws s3 sync`.
 3. Merges every catalog's `.tmc/` metadata into `public/catalog-repos/.tmc/`, tagging each TM with its repository so it can be filtered.
 
 Each catalog lands in `<name>-<hash>/` and must contain `.tmc/tm-catalog.toc.json`. A token for private repositories can be passed with `pnpm catalogs:download --token <token>` or `CI_JOB_TOKEN`.
+
+### Building the UI from a catalog
+
+`ci-cd/ui-for-catalog.ts` is the reverse of the downloader: it is run from the root of a catalog repository and builds a UI for that catalog. It only uses Node.js built-ins, so the single file can be copied or downloaded into the catalog. It requires Git, pnpm and Node.js >= 22.20.0.
+
+```sh
+node --experimental-strip-types ui-for-catalog.ts
+```
+
+1. Clones tmc-ui into `<catalog>/tmc-ui` (`git clone --depth 1`), or updates an existing clone (`git pull --ff-only`).
+2. Replaces the content of `tmc-ui/public/catalog-repos/` with a copy of the catalog in `<catalog folder name>/`, skipping `tmc-ui`, `.git` and `node_modules`.
+3. Builds the merged index in `tmc-ui/public/catalog-repos/.tmc/`.
+4. Runs `pnpm install --frozen-lockfile` and `pnpm run build` in the clone.
+
+The catalog must contain `.tmc/tm-catalog.toc.json`. Add `tmc-ui/` to the catalog's `.gitignore` so the clone is not committed.
+
+| Variable          | Description                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `TMC_UI_REPO_URL` | Git URL of the tmc-ui repository to clone. Default: `https://github.com/wot-oss/tmc-ui.git`. |
+| `TMC_UI_REF`      | Branch or tag to clone. Default: the repository's default branch. Ignored when the clone already exists. |
+| `IS_STATIC`       | Defaults to `true` in this script, so the build is a static export in `tmc-ui/out/`. Set to `false` for a Node server build. |
+
+These are read from the shell environment, not from `.env`. The other [environment variables](#environment-variables), such as `BASE_PATH`, are passed through to the build; leave `TMC_SERVER_URL` unset so the UI runs in client mode.
 
 ## Scripts
 
@@ -108,6 +131,7 @@ Each catalog lands in `<name>-<hash>/` and must contain `.tmc/tm-catalog.toc.jso
 | `pnpm dev`                          | Development server on port 5173    |
 | `pnpm build` / `pnpm start`         | Production build / serve           |
 | `pnpm catalogs:download`            | Download and merge catalogs        |
+| `ci-cd/ui-for-catalog.ts`           | Build the UI from inside a catalog |
 | `pnpm format` / `pnpm format:check` | Prettier write / check             |
 | `pnpm test`, `pnpm test:coverage`   | Vitest                             |
 | `pnpm clean`                        | Reinstall dependencies and rebuild |
@@ -124,7 +148,7 @@ lib/
   services/             apiData (TMC server), localData (bundled catalogs), auth (token)
   hooks/                Inventory state: data controls, filters, search, pagination
   utils/                Constants, storage, ID encoding, debug
-ci-cd/                  Catalog downloader and shell helpers
+ci-cd/                  Catalog downloader (catalog-for-ui) and UI builder for catalogs (ui-for-catalog)
 public/catalog-repos/   Downloaded catalogs and merged .tmc index (client mode)
 next.config.ts          Env mapping, static export, dev API proxy
 ```

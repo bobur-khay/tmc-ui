@@ -93,7 +93,7 @@ async function readProtocols(file: string): Promise<string[]> {
   return [...protocols];
 }
 
-async function mergeCatalogMetadata(directories: string[]) {
+export async function mergeCatalogMetadata(directories: string[]) {
   const temporaryDirectory = await mkdtemp(join(catalogsDirectory, '.merge-'));
   const destination = join(catalogsDirectory, '.tmc');
   const textFiles = new Map<string, Set<string>>();
@@ -300,9 +300,12 @@ async function main() {
   );
 }
 
-main().catch((error: unknown) => {
-  console.error(
-    `[${new Date().toISOString()}] [catalogs] ERROR: ${error instanceof Error ? error.message : 'Catalog download failed.'}`,
-  );
-  process.exitCode = 1;
-});
+// ui-for-catalog.ts imports mergeCatalogMetadata, which must not start a download.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error: unknown) => {
+    console.error(
+      `[${new Date().toISOString()}] [catalogs] ERROR: ${error instanceof Error ? error.message : 'Catalog download failed.'}`,
+    );
+    process.exitCode = 1;
+  });
+}
